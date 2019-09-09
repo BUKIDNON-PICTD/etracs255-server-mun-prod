@@ -1,0 +1,44 @@
+<script>
+
+\$put("binfo", new function() {
+
+    var self = this;
+    var qrySvc = Service.lookup( "QueryService", "main" );
+    
+    this.list;
+    this.selectedItem;
+    this.onselect;
+
+    this.onload = function() {
+        var m = {}
+        m._schemaname = 'business';
+        m._limit = 10;
+        this.list = qrySvc.getList(m);
+    }
+
+    this.select = function() {
+        this.onselect( this.selectedItem );
+        return "_close";
+    }
+});
+</script>
+<style>
+    table .selected { background-color:lightgrey;}
+</style>
+
+
+
+
+<table r:context="binfo" r:items="list" r:varName="x" r:name="selectedItem">
+    <thead>
+        <td>Objid</td>
+        <td>Trade Name</td>
+    </thead>
+    <tbody>
+        <tr>
+            <td>#{x.objid}</td>
+            <td>#{x.tradename}</td>
+        </tr>
+    </tbody>
+</table>
+<input type="button" r:context="binfo" r:name="select" value="Lookup"/>

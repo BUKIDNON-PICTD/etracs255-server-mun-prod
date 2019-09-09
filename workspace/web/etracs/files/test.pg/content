@@ -1,0 +1,26 @@
+<script>
+\$register( {id:'businesslookup', context:'binfo', page:'/businesslookup' } )
+\$put("info", new function() {
+    
+    var self = this;
+    this.entity = {};
+
+    this.lookupBusiness = function() {
+        var h = function(c) {
+            self.entity.business = c;
+            self._controller.refresh();  
+        }
+        return new PopupOpener( "businesslookup", {onselect: h}, {title:'Lookup Business', width:400, resizable:true} );
+    }
+
+
+});
+</script>
+
+
+Name : <input type="text" r:context="info" r:name="entity.name"/><br>
+Business: 
+<label r:context="info" r:visibleWhen="#{entity.business == null}">No business selected</label>
+<label r:context="info" r:visibleWhen="#{entity.business != null}">#{entity.business.tradename}</label>
+<button r:context="info" r:name="lookupBusiness">Lookup Business</button><br>
+

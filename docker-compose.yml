@@ -1,0 +1,14 @@
+version: '3'
+services:
+  etracsserver:
+    build: .
+    volume:
+      - /home/tagabukid/modules:/etracs255-server-muni/workspace/services/apps/modules
+      - /home/tagabukid/client:/etracs255-server-muni/workspace/web/resources/downloads/modules
+    ports:
+      - 7003:8080
+      - 7004:80
+      - 7005:8070
+
+  
+  
