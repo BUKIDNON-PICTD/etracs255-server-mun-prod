@@ -6,7 +6,10 @@
 ### ====================================================================== ###
 
 ### $Id: run.sh 57514 2006-10-09 18:16:00Z dimitris@jboss.org $ ###
-rm .osiris_pid
+sh /opt/etracs255-server-muni/bin/shutdown.sh
+rm /opt/etracs255-server-muni/bin/.osiris_pid
+rm /opt/etracs255-server-muni/log*
+
 DIRNAME=`dirname $0`
 PROGNAME=`basename $0`
 GREP="grep"
@@ -170,5 +173,5 @@ echo ""
 echo "========================================================================="
 echo ""
 
-$JAVA $JAVA_OPTS -classpath $JBOSS_HOME/lib/*:. com.rameses.main.bootloader.MainBootLoader
+$JAVA $JAVA_OPTS -classpath $JBOSS_HOME/lib/*:. com.rameses.main.bootloader.MainBootLoader >> /opt/etracs255-server-muni/log-$NOW$(date +"%H_%M_%S").txt
 
