@@ -20,7 +20,7 @@ from vw_remittance_cashreceiptitem v
 	inner join fund on fund.objid = v.fundid 
 where v.remittanceid = $P{remittanceid} 
 group by 
-	v.formtypeindex, v.formno, v.collectiontype_objid, 
+	v.formtypeindex, v.formtype, v.formno, v.collectiontype_objid, 
 	v.collectiontype_name, v.fundid, fund.title 
 order by v.formtypeindex, v.formno, v.collectiontype_name 
 

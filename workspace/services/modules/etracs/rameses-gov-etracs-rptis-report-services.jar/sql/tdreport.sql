@@ -167,7 +167,7 @@ FROM faas f
 	INNER JOIN planttreeassesslevel ptal ON ptd.actualuse_objid = ptal.objid 
 	INNER JOIN planttree pt ON ptd.planttree_objid = pt.objid 
 WHERE f.objid = $P{faasid}
-GROUP BY pc.name, ptd.assesslevel, r.rputype, ptal.name 
+GROUP BY pc.name, pc.code, ptd.assesslevel, r.rputype, ptal.name 
 
 
 [getLandPlantTreeAssessment]
