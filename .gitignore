@@ -1,6 +1,6 @@
 
 ### ETRACS DS ###
-workspace/services/datasources
-workspace/web/resources/downloads/modules/custom
+# workspace/services/datasources
+# workspace/web/resources/downloads/modules/custom
 ### UPDATES.XML ###
-updates.xml
+# updates.xml
