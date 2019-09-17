@@ -1,3 +1,3 @@
 FROM openjdk:8
-COPY . /etracs255-server-muni
-CMD ["/etracs255-server-muni/bin/run.sh"]
+COPY . /etracs255-server-muni-prod
+CMD ["/etracs255-server-muni-prod/bin/run.sh"]

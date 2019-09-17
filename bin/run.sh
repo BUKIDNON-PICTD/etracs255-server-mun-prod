@@ -6,7 +6,7 @@
 ### ====================================================================== ###
 
 ### $Id: run.sh 57514 2006-10-09 18:16:00Z dimitris@jboss.org $ ###
-
+rm .osiris_pid
 DIRNAME=`dirname $0`
 PROGNAME=`basename $0`
 GREP="grep"

@@ -2,13 +2,36 @@ version: '3'
 services:
   etracsserver:
     build: .
-    volume:
-      - /home/tagabukid/modules:/etracs255-server-muni/workspace/services/apps/modules
-      - /home/tagabukid/client:/etracs255-server-muni/workspace/web/resources/downloads/modules
+    # volume:
+    #   - /home/tagabukid/modules:/etracs255-server-muni-prod/workspace/services/apps/modules
+    #   - /home/tagabukid/client:/etracs255-server-muni-prod/workspace/web/resources/downloads/modules
     ports:
-      - 7003:8080
-      - 7004:80
-      - 7005:8070
+      - 8080:8080
+      - 80:80
+      - 8070:8070
+  db:
+    image: mysql:5.6.37
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'db'
+      # So you don't have to use root, but you can if you like
+      MYSQL_USER: 'user'
+      # You can use whatever password you like
+      MYSQL_PASSWORD: 'password'
+      # Password for root access
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      # <Port exposed> : < MySQL Port running inside container>
+      - '3307:3306'
+    expose:
+      # Opens port 3306 on the container
+      - '3307'
+      # Where our data will be persisted
+    volumes:
+      - my-db:/var/lib/mysql
+# Names our volume
+volumes:
+  my-db:
 
   
   
