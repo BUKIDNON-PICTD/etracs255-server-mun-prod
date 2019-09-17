@@ -42,7 +42,7 @@ WHERE cr.remittanceid = $P{remittanceid}
 GROUP BY 
 	CONCAT( IFNULL( cr.remittanceid, '-' ), f.objid ), 
 	CONCAT( IFNULL( r.controlno, '-'), f.code ), 
-	cr.remittanceid, r.controlno, f.objid, f.code, f.title 
+	cr.remittanceid, f.objid, f.code, f.title 
 
 
 [getCashReceiptsForRemittance]
