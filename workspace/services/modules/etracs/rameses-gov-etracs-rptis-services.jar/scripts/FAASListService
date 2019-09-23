@@ -212,7 +212,7 @@ public class FAASListService extends ActiveCrudListService {
     }   
 
     void afterList(params, list) {
-        //XTODO: temporary and ugly hack: codes must not be hardcoded 
+        //TODO: temporary and ugly hack: codes must not be hardcoded 
         list.each{
             if (it.classcode?.toLowerCase()?.matches('a|agr'))
                 it.totalarea = numSvc.roundA(it.totalareaha, 4) + ' ha'
