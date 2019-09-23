@@ -1,15 +1,15 @@
 <app>
 <env>
-app.title=ETRACS v2.5 build 05 20190717 03014 LGUFORMALNAME
-app.host=localhost:8070
+app.title=ETRACS v2.5 PATCH-255-03013.019 formallguname
+app.host=serverip:8070
 app.cluster=osiris3
 app.context=etracs25
-app.help=http://localhost:8080/help
+app.help=http://serverip:8080/help
 app.loader=com.rameses.osiris2.client.OsirisAppLoader
-readTimeout=60000
-connectionTimeout=5000
+readTimeout=180000
+connectionTimeout=180000
 
-ws.host=localhost:8060
+ws.host=serverip:8060
 app.custom=lguname
 report.custom=lguname
 </env>
@@ -69,19 +69,17 @@ report.custom=lguname
 
 
 	<!-- rptis libraries -->
-	<module file="rameses-gov-etracs-rptis.jar" version="2.55"/>
-	<module file="rameses-gov-etracs-rptis-landtax.jar" version="3.55"/>
-	<module file="rameses-gov-etracs-rptis-landtax-report.jar" version="2.55"/>
-	<module file="rameses-gov-etracs-rptis-municipality.jar" version="2.55"/>
+	<module file="rameses-gov-etracs-rptis.jar" version="2.13"/>
+	<module file="rameses-gov-etracs-rptis-landtax.jar" version="3.0"/>
+	<module file="rameses-gov-etracs-rptis-landtax-report.jar" version="2.95"/>
+	<module file="rameses-gov-etracs-rptis-municipality.jar" version="2.95"/>
 	<module file="rameses-gov-etracs-rptis-report.jar" version="2.13"/>
 	<module file="rameses-gov-etracs-rptis-transmittal.jar" version="2.13"/>
 	<module file="rameses-gov-etracs-signatory-template.jar" version="2.5"/>
- 
-
-	<!-- plugin modules -->
-	<!-- <module file="plugins/bpfacility-client.jar" version="1.3"/> -->
+	
 	<module file="plugins/rameses-queueing.jar" version="2.55"/>
-	<!-- <module file="plugins/rameses-gov-etracs-ctc.jar" version="2.21"/> -->
-	<!-- <module file="plugins/rameses-gov-etracs-waterworks-collection-proxy.jar" version="1.0"/> -->
+
+	<!-- custom modules -->
+
 </modules>
 </app>
