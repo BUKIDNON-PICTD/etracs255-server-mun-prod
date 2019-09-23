@@ -1,15 +1,15 @@
 <app>
 <env>
 app.title=ETRACS v2.5 PATCH-255-03013.019 formallguname
-app.host=serverip:8070
+app.host=localhost:8070
 app.cluster=osiris3
 app.context=etracs25
-app.help=http://serverip:8080/help
+app.help=http://localhost:8080/help
 app.loader=com.rameses.osiris2.client.OsirisAppLoader
 readTimeout=180000
 connectionTimeout=180000
 
-ws.host=serverip:8060
+ws.host=localhost:8060
 app.custom=lguname
 report.custom=lguname
 </env>
