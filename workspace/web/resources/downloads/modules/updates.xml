@@ -12,6 +12,7 @@ connectionTimeout=180000
 ws.host=localhost:8060
 app.custom=lguname
 report.custom=lguname
+jesbert=true
 </env>
 <modules>
 
@@ -69,13 +70,13 @@ report.custom=lguname
 
 
 	<!-- rptis libraries -->
-	<module file="rameses-gov-etracs-rptis.jar" version="2.13"/>
-	<module file="rameses-gov-etracs-rptis-landtax.jar" version="3.0"/>
-	<module file="rameses-gov-etracs-rptis-landtax-report.jar" version="2.95"/>
-	<module file="rameses-gov-etracs-rptis-municipality.jar" version="2.95"/>
-	<module file="rameses-gov-etracs-rptis-report.jar" version="2.13"/>
-	<module file="rameses-gov-etracs-rptis-transmittal.jar" version="2.13"/>
-	<module file="rameses-gov-etracs-signatory-template.jar" version="2.5"/>
+	<module file="rameses-gov-etracs-rptis.jar" version="2.55"/>
+	<module file="rameses-gov-etracs-rptis-landtax.jar" version="2.55"/>
+	<module file="rameses-gov-etracs-rptis-landtax-report.jar" version="2.55"/>
+	<module file="rameses-gov-etracs-rptis-municipality.jar" version="2.55"/>
+	<module file="rameses-gov-etracs-rptis-report.jar" version="2.55"/>
+	<module file="rameses-gov-etracs-rptis-transmittal.jar" version="2.55"/>
+	<!-- <module file="rameses-gov-etracs-signatory-template.jar" version="2.55"/> -->
 	
 	<module file="plugins/rameses-queueing.jar" version="2.55"/>
 
