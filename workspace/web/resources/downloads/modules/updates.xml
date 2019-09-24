@@ -10,9 +10,8 @@ readTimeout=180000
 connectionTimeout=180000
 
 ws.host=localhost:8060
-app.custom=lguname
-report.custom=lguname
-jesbert=true
+app.custom=buk
+report.custom=buk
 </env>
 <modules>
 
@@ -76,7 +75,7 @@ jesbert=true
 	<module file="rameses-gov-etracs-rptis-municipality.jar" version="2.55"/>
 	<module file="rameses-gov-etracs-rptis-report.jar" version="2.55"/>
 	<module file="rameses-gov-etracs-rptis-transmittal.jar" version="2.55"/>
-	<!-- <module file="rameses-gov-etracs-signatory-template.jar" version="2.55"/> -->
+	<module file="rameses-gov-etracs-signatory-template.jar" version="2.55"/>
 	
 	<module file="plugins/rameses-queueing.jar" version="2.55"/>
 
