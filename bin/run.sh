@@ -6,6 +6,7 @@
 ### ====================================================================== ###
 
 ### $Id: run.sh 57514 2006-10-09 18:16:00Z dimitris@jboss.org $ ###
+# test
 sh /opt/etracs255-server-muni/bin/shutdown.sh
 rm /opt/etracs255-server-muni/bin/.osiris_pid
 rm /opt/etracs255-server-muni/log*
