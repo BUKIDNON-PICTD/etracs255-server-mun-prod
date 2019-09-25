@@ -1,5 +1,5 @@
 dialect=mysql
 driverClass=com.mysql.jdbc.Driver
-url=jdbc:mysql://db:3307/notification_lgu
+url=jdbc:mysql://localhost:3307/notification_lgu
 user=root
 pwd=z7a18q
