@@ -1,0 +1,646 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID;
+import com.rameses.util.*;
+
+class ETRACS22To25403203017MigrationService 
+{
+	@PersistenceContext("main")
+	def em3;
+
+	@ActiveDB('faas')	
+	def faasEm
+
+	@ActiveDB('realproperty')
+	def rpEm
+
+	@ActiveDB('structure')
+	def sm
+
+	@ActiveDB('rpu')
+	def rpuEm
+
+	@ActiveDB('etracs254rpt')
+	def em254
+
+	@ActiveDB(value='etracs22rpt', em='etracs22')
+	def em 
+
+	@Service('DateService')
+	def dtSvc 
+
+	@Service()
+	def self 
+
+	@Service('Var')
+	def var 
+
+	def LGUID = '059-09'
+
+
+	@Service('Entity22MigrationService')
+    def entitySvc 
+
+    @Service('FAASService')
+    def faasSvc 
+
+    @Service('RPTUtil')
+	def util
+
+	 @Service('ETRACS22To254LandRpu')
+	def em22landrpu
+	
+	@Service('ETRACS22To254BldgRpu')
+	def em22bldgrpu
+	@Service('ETRACS22To254MachRpu')
+	def em22machrpu
+	@Service('ETRACS22To254PlantTreeRpu')
+	def em22planttreerpu
+	@Service('ETRACS22To254MiscRpu')
+	def em22miscrpu
+ 
+	@ProxyMethod
+	public List getFaasesForMigration(params){
+	 	return em.getFaasesForMigration(params)
+	}
+
+    @ProxyMethod
+    public void logMigrationErrors(faasid,msg){
+    	em.logError([objid:faasid, log:msg])
+    }
+
+    @ProxyMethod
+    public def migrateFaasData(params) {
+    	em254.disablekeycheck()
+		if (!params.rputype) throw new Exception('RPU Type is required')
+		if (!params.count) throw new Exception('Count is required')
+
+	    def faases = getFaasesForMigration(params);
+    	println 'Migrating ' + params.rputype + ' FAAS.... ' + faases.size()
+
+        faases.each{it->
+           try{
+               self.migrateFaas(it);
+           }catch(e){
+               println e
+               logMigrationErrors(it.objid,e.getMessage() + "  docstate:" + it.docstate+ "  tdno:" + it.tdno+ "  fullpin:" + it.fullpin)
+           }
+        }
+        em254.enablefkcheck();
+        return faases.size()
+    }  
+
+
+     @ProxyMethod
+    public def migrateFaasDataCustom(params) {
+		if (!params.rputype) throw new Exception('RPU Type is required')
+		if (!params.count) throw new Exception('Count is required')
+
+	    def faases = getFaasesForMigration(params);
+    	println 'Migrating ' + params.rputype + ' FAAS.... ' + faases.size()
+
+        faases.each{it->
+           try{
+               self.custommigration(it);
+           }catch(e){
+               println e
+               logMigrationErrors(it.objid,e.getMessage() + "  docstate:" + it.docstate+ "  tdno:" + it.tdno+ "  fullpin:" + it.fullpin)
+               
+           }
+        }
+        return faases.size()
+    }  
+
+
+    @ProxyMethod
+	public def custommigration( faas ) {
+		println 'Migrating FAAS ' + faas.objid 
+		def faas22 = em.findFaasByid(faas)	
+		faas22.info = em.serializer.read(faas22.info)
+		faas22.extended = em.serializer.read(faas22.extended)
+		faas22.rp = em.serializer.read(faas22.rp)
+		faas22.rpu = em.serializer.read(faas22.rpu)
+		faas22.previousfaases = em.serializer.read( faas22.previousfaases == null ? [] : faas22.previousfaases) 
+
+		domigrateFaasCustom(faas22)
+		return faas22 
+	}
+
+	@ProxyMethod
+	public def migratemissingentity( entity ) {
+		
+		if (!isEntityMigrated(entity.objid)){
+				if (!isEntityMigrated2(entity.objid)){
+					println entity.objid
+					entitySvc.migrateEntity(entity.objid)
+				}
+				
+		}
+	}
+
+	@ProxyMethod
+	public def migrateFaas( faas ) {
+		println 'Migrating FAAS ' + faas.objid 
+		
+		def faas22 = em.findFaasByid(faas)	
+		faas22.info = em.serializer.read(faas22.info)
+		faas22.extended = em.serializer.read(faas22.extended)
+		faas22.rp = em.serializer.read(faas22.rp)
+		faas22.rpu = em.serializer.read(faas22.rpu)
+		faas22.previousfaases = em.serializer.read( faas22.previousfaases == null ? [] : faas22.previousfaases) 
+
+		// println faas22.objid
+		if (faas22.previousfaases.size > 0){
+			faas22.previousfaases.each{
+				self.migrateFaas([objid:it.faasid]);
+			}
+		}
+		
+		if (faas22.rpu.rputype == 'land'){
+			faas22.newrpu = em22landrpu.migrateLandRpu(faas22.rpu)
+		}else if (faas22.rpu.rputype == 'bldg'){
+			def landfaas22 = em.findLandFaasById(faas22)
+			//hack on migrationfail fix libona
+			// faas22.rpu.objid =	em254.findRpuByFaasId([faasid:faas22.objid]).rpuid
+
+			if (!landfaas22)
+			throw new Exception('Building Land FAAS does not exist.')
+
+			def landfaas = em254.findLandFaasById(landfaas22)
+
+			// def realproperty = em.findRealPropertyByFaasId(faas22);
+
+			if (!landfaas)
+			throw new Exception('Land RP reference does not exist.')
+			
+			//throw new Exception('Land RPU reference does not exist.')
+			//haknako para sa libona
+			faas22.rp.objid = landfaas.realpropertyid
+			faas22.rpu.landfaas = [rpuid:landfaas.rpuid]
+			// faas22.rp.objid = realproperty.objid
+			// faas22.rpu.landfaas = [rpuid:realproperty.landfaasid]
+
+			faas22.newrpu = em22bldgrpu.migrateBldgRpu(faas22.rpu)
+		}else if (faas22.rpu.rputype == 'mach'){
+			def landfaas22 = em.findLandFaasById(faas22)
+			
+			if (!landfaas22)
+			throw new Exception('Machine Land FAAS does not exist.')
+
+			def landfaas = em254.findLandFaasById(landfaas22)
+
+			if (!landfaas) 
+			throw new Exception('Land RPU reference does not exist.')
+
+			faas22.rp.objid = landfaas.realpropertyid
+			faas22.rpu.landfaas = [rpuid:landfaas.rpuid]
+
+			faas22.newrpu = em22machrpu.migrateMachRpu(faas22.rpu)
+		}else if (faas22.rpu.rputype == 'planttree'){
+			def landfaas22 = em.findLandFaasById(faas22)
+			
+			if (!landfaas22)
+			throw new Exception('PlantTree Land FAAS does not exist.')
+
+			def landfaas = em254.findLandFaasById(landfaas22)
+
+			if (!landfaas) 
+			throw new Exception('Land RPU reference does not exist.')
+
+			faas22.rp.objid = landfaas.realpropertyid
+			faas22.rpu.landfaas = [rpuid:landfaas.rpuid]
+
+			faas22.newrpu = em22planttreerpu.migratePlantTree(faas22.rpu)
+		}else if (faas22.rpu.rputype == 'misc'){
+			def landfaas22 = em.findLandFaasById(faas22)
+			
+			if (!landfaas22)
+			throw new Exception('MISC Land FAAS does not exist.')
+
+			def landfaas = em254.findLandFaasById(landfaas22)
+
+			if (!landfaas) 
+			throw new Exception('Land RPU reference does not exist.')
+
+			faas22.rp.objid = landfaas.realpropertyid
+			faas22.rpu.landfaas = [rpuid:landfaas.rpuid]
+			
+			faas22.newrpu = em22miscrpu.migrateMisc(faas22.rpu)
+
+		}
+
+
+
+		em254.disablekeycheck();
+
+		if (!isEntityMigrated(faas22.info.taxpayerid)){
+				if (!isEntityMigrated2(faas22.info.taxpayerid)){
+					entitySvc.migrateEntity(faas22.info.taxpayerid)
+				}
+		}
+		
+		
+		doMigrateFaas(faas22)
+		//doMigrateSignatories(faas22)
+		em254.enablefkcheck();
+		return faas22 
+	}
+
+	def isEntityMigrated(entityid){
+		return em.getEntityifExist([objid:entityid])
+	}
+
+	def isEntityMigrated2(entityid){
+		return em254.findEntityById([objid:entityid])
+	}
+
+	@ProxyMethod
+    public def migratePreviousFaasData(params) {
+		if (!params.count) throw new Exception('Count is required')
+
+	    def faases = em.getPrevFaasesForMigration(params);
+    	println 'Migrating Previous FAAS.... ' + faases.size()
+
+        faases.each{it->
+        	println 'Migrating FAAS ' + it.objid 
+           def faas22 = em.findFaasPrevInfoById(it)	
+           try{
+           	   if (faas22.previousfaases == null ) faas22.previousfaases = '[]'
+           	   faas22.previousfaases = em.serializer.read(faas22.previousfaases)
+               doMigratePreviousFaases(faas22)
+           }catch(e){
+            	println 'ERROR: ' + e.message 
+           		em.logPrevFaasError([objid:faas22.objid, log:e.message])
+           }
+        }
+        return faases.size()
+    }  
+
+
+	/*==============================================================
+	*
+	*  MIGRATE REAL PROPERTY
+	*
+	*==============================================================*/
+	void doMigrateRealProperty(faas22){
+		if (faas22.rpu.rputype != 'land')
+			return 
+
+		if ( ! faas22.rp.objid ){
+			def rpid = 'RP' + new java.rmi.server.UID()
+			if (faas22.rpu.realpropertyid)
+				rpid = faas22.rpu.realpropertyid
+			faas22.rp.objid = rpid 
+			faas22.rpu.realpropertyid = rpid 
+			faas22.realpropertyid = rpid 				
+		}
+
+		if (existRealProperty(faas22.rp))
+			return 
+
+		def rp = faas22.rp 
+		def newrp = [
+			objid 			: rp.objid,
+			state 			: faas22.docstate,
+			autonumber 		: 0,
+			pintype 		: rp.pintype,
+			pin 			: rp.pin,
+			section 		: rp.section, 
+			parcel 			: rp.parcel, 
+			ry 				: faas22.rpu.ry, 
+			claimno  		: rp.claimno, 
+			purok 			: rp.purok, 
+			surveyno 		: rp.surveyno, 
+			cadastrallotno  : rp.cadastrallotno,
+			blockno 		: rp.blockno, 
+			street 			: rp.street, 
+			barangayid 		: rp.barangayid,
+			north 			: rp.north, 
+			east			: rp.east, 
+			south			: rp.south, 
+			west			: rp.west, 
+			lgutype			: (rp.lgutype == null ? 'municipality':rp.lgutype), 
+			lguid			: faas22.extended.lguid, 
+			previd			: rp.previd, 
+		]
+		rpEm.create(newrp)
+	}
+
+	boolean existRealProperty(rp){
+		return em254.findRealPropertyById(rp) != null 
+	}
+
+
+	/*==============================================================
+	*
+	*  MIGRATE RPU 
+	*
+	*==============================================================*/
+	void doMigrateRpu(faas22){
+		if ( existRpu(faas22.rpu))
+			return 
+
+		def rpu = faas22.rpu 
+		rpu.realpropertyid = faas22.rp.objid 
+
+		if (!rpu.objid){
+			rpu.objid = 'RPU' + new java.rmi.server.UID()
+			faas22.rpuid = rpu.objid 
+		}
+
+		def newrpu = [
+			objid 			: rpu.objid,
+			state 			: faas22.docstate,
+			realpropertyid 	: rpu.realpropertyid,
+			rputype 		: rpu.rputype,
+			ry 				: rpu.ry,
+			fullpin 		: rpu.fullpin,
+			suffix 			: rpu.suffix,
+			subsuffix 		: rpu.subsuffix,
+			classification	: [objid:rpu.classid],
+			exemptiontype   : (rpu.exemptid ? [objid:rpu.exemptid] : null),
+			taxable 		: rpu.taxable,
+			totalareaha 	: rpu.totalareaha,
+			totalareasqm 	: rpu.totalareasqm,
+			totalbmv 		: rpu.totalbmv,
+			totalmv 		: rpu.totalmv,
+			totalav 		: rpu.totalav,
+			hasswornamount 	: toBoolean(rpu.info.swornstatement, false),
+			swornamount 	: (rpu.info.swornamount == null ? 0.0 : rpu.info.swornamount),
+			useswornamount 	: toBoolean(rpu.info.useswornamount, false),
+			previd 			: rpu.previd,
+			rpumasterid 	: rpu.rpumasterid,
+			reclassed 		: false,
+		]
+		rpuEm.create(newrpu)
+	}
+
+	boolean existRpu(rpu){
+		return em254.findRpuById(rpu) != null 
+	}
+
+
+	/*==============================================================
+	*
+	*  MIGRATE FAAS 
+	*
+	*==============================================================*/
+	void doMigrateFaas(faas22)	{
+		if (existFaas(faas22)){
+			if (!existFaasLog(faas22))
+				em.logMigratedFaas([objid:faas22.objid])
+			return 
+		}
+
+		// def landfaas = [realpropertyid:faas22.rp.objid];
+		// if (faas22.rpu.rputype != 'land'){
+		// 	landfaas = em.findLandFaasById(faas22)
+		// 	if (landfaas) 
+		// 		landfaas = em254.findLandFaasById(landfaas)
+		// }
+		// faas22.rp.objid = landfaas.realpropertyid
+
+		if (!faas22.rp.objid){
+			faas22.rp.objid = em.findRealPropertyByFaasId(faas22).objid;
+		}
+
+
+		def pdate = dtSvc.parseDate(faas22.info.dtapproved, null)
+		// def newfaas = [
+			faas22.state              = faas22.docstate
+			faas22.datacapture        = faas22.info.datacapture
+			faas22.autonumber         = util.toBoolean(var.td_autonumber, false)
+			faas22.tdno               = faas22.info.tdno
+			faas22.utdno              = (faas22.info.tdno ? faas22.info.tdno : faas22.objid[-20..-1])
+			faas22.txntype            = [objid:faas22.info.txntype]
+			faas22.txntype.newrpu 	  = true
+			faas22.effectivityyear    = faas22.info.effectivityyear
+			faas22.effectivityqtr     = faas22.info.effectivityqtr
+			faas22.titletype          = faas22.info.titletype
+			faas22.titleno            = faas22.info.titleno
+			faas22.titledate          = faas22.info.issuedate
+			faas22.rpuid              = faas22.newrpu.objid
+			faas22.realpropertyid     = faas22.rp.objid
+			faas22.fullpin            = faas22.newrpu.fullpin
+			faas22.taxpayer           = [objid:faas22.info.taxpayerid, name:faas22.info.taxpayername, address:faas22.info.taxpayeraddress]
+			faas22.owner              = [name:faas22.info.ownername, address:faas22.info.owneraddress]
+			faas22.administrator      = getAdministratorInfo(faas22)
+			faas22.beneficiary        = null
+			faas22.memoranda          = faas22.info.memoranda
+			faas22.cancelnote         = faas22.info.cancelnote
+			faas22.restrictionid      = faas22.info.restrictionid
+			faas22.backtaxyrs         = faas22.info.backtaxyrs
+			faas22.prevtdno           = faas22.info.prevtdno
+			faas22.prevpin            = faas22.info.prevpin
+			faas22.prevowner          = faas22.info.prevowner
+			faas22.prevadministrator  = faas22.info.prevadministrator
+			faas22.prevav             = faas22.info.prevav
+			faas22.prevmv             = faas22.info.prevmv
+			faas22.prevareasqm        = faas22.info.prevareasqm == null ? 0.0 : faas22.info.prevareasqm
+			faas22.prevareaha         = faas22.info.prevareaha == null ? 0.0 : faas22.info.prevareaha
+			faas22.preveffectivity    = faas22.info.preveffectivity
+			faas22.cancelreason       = faas22.info.cancelreason
+			faas22.canceldate         = faas22.info.canceldate
+			faas22.cancelledbytdnos   = faas22.info.cancelledbytdnos
+			faas22.lguid              = var.lgu_objid
+			faas22.originlguid              = var.lgu_objid
+			faas22.lgutype            = var.lgu_type
+			faas22.txntimestamp       = faas22.info.txntimestamp
+			faas22.cancelledtimestamp = faas22.info.cancelledtimestamp
+			faas22.name               = getNameInfo(faas22)
+			faas22.dtapproved         = faas22.info.dtapproved
+			faas22.ryordinanceno      = (faas22.info.ryordinanceno == null ? '-' : faas22.info.ryordinanceno)
+			faas22.ryordinancedate    = faas22.info.ryordinancedate
+			faas22.year               = pdate.year
+			faas22.qtr                = pdate.qtr
+			faas22.month              = pdate.month
+			faas22.day                = pdate.day
+			// faas22.rp                 = em.serializer.read(faas22.rp)
+			// faas22.rpu                = em.serializer.read(faas22.rpu)
+			// faas22.previousfaases     = em.serializer.read( faas22.previousfaases == null ? [] : faas22.previousfaases)
+		// ]
+
+		if (faas22.docstate=='CANCELLED'){
+			def cdate = dtSvc.parseDate(faas22.info.canceldate, null)
+			faas22.cancelledyear = cdate.year
+			faas22.cancelledqtr = cdate.qtr
+			faas22.cancelledmonth = cdate.month 
+			faas22.cancelledday = cdate.day
+		}
+
+
+		faas22.rp.state = faas22.state
+		faas22.rp.ry = faas22.rpu.ry
+		
+		faas22.newrpu.state          = faas22.docstate
+		faas22.newrpu.realpropertyid = faas22.rp.objid
+		faas22.newrpu.rputype        = faas22.rpu.rputype
+		faas22.newrpu.ry             = faas22.rpu.ry
+		faas22.newrpu.fullpin        = faas22.rpu.fullpin
+		faas22.newrpu.suffix         = faas22.rpu.suffix
+		faas22.newrpu.subsuffix      = faas22.rpu.subsuffix
+		faas22.newrpu.classification = [objid:faas22.rpu.classid]
+		faas22.newrpu.exemptiontype  = (faas22.rpu.exemptid ? [objid:faas22.rpu.exemptid] : null)
+		if (!faas22.rpu.taxable && faas22.newrpu.exemptiontype == null){
+			faas22.newrpu.taxable = true
+		}
+		else {
+			faas22.newrpu.taxable = faas22.rpu.taxable
+		}
+		faas22.newrpu.totalareaha    = faas22.rpu.totalareaha
+		faas22.newrpu.totalareasqm   = faas22.rpu.totalareasqm
+		faas22.newrpu.totalbmv       = faas22.rpu.totalbmv
+		faas22.newrpu.totalmv        = faas22.rpu.totalmv
+		faas22.newrpu.totalav        = faas22.rpu.totalav
+		faas22.newrpu.hasswornamount = toBoolean(faas22.rpu.info.swornstatement, false)
+		faas22.newrpu.swornamount    = (faas22.rpu.info.swornamount == null ? 0.0 : faas22.rpu.info.swornamount)
+		faas22.newrpu.useswornamount = toBoolean(faas22.rpu.info.useswornamount, false)
+		faas22.newrpu.previd         = faas22.rpu.previd
+		faas22.newrpu.rpumasterid    = faas22.rpu.rpumasterid
+		faas22.newrpu.reclassed      = false
+		faas22.rpu                   = faas22.newrpu
+
+		def faaslist = em.findFaasListById(faas22)
+		if (faaslist){
+			
+			faas22.taxmapper = [:]
+			faas22.taxmapperchief = [:]
+			faas22.appraiser = [name:faaslist.appraisedby, title:faaslist.appraisedbytitle, dtsigned:faaslist.issuedate]
+			faas22.appraiserchief = [:]
+			faas22.recommender = [name:faaslist.recommendedby, title:faaslist.recommendedbytitle, dtsigned:faaslist.issuedate]
+			faas22.provrecommender = [:]
+			faas22.provtaxmapper = [:]
+			faas22.provtaxmapperchief = [:]
+			faas22.provappraiser = [:]
+			faas22.provappraiserchief = [:]
+			faas22.provrecommender = [:]
+			faas22.provapprover = [:]
+			faas22.approver = [name:faaslist.approvedby, title:faaslist.approvedbytitle, dtsigned:faaslist.issuedate]
+		}
+
+		
+		faasSvc.createFaas(faas22);
+		// faasEm.create(newfaas)
+		em.logMigratedFaas([objid:faas22.objid])
+	}
+
+	def getNameInfo(faas22){
+		def len = faas22.info.ownername.length()
+		if (len >= 25) len = 25
+		return faas22.info.ownername.substring(0,len)
+	}
+
+	def getAdministratorInfo(faas22){
+		if (faas22.info.administratorname)
+			return [
+				objid : faas22.info.administratorid,
+				name : faas22.info.administratorname,
+				address : faas22.info.administratoraddress,
+			]
+	}
+
+	void doMigratePreviousFaases(faas22){
+		if (faas22.previousfaases){
+			faas22.previousfaases.each{
+				def prevfaas = [faasid:faas22.objid, prevfaasid:it.faasid]
+				if (!existPreviousFaas(prevfaas)){
+					em254.insertPreviousFaas(prevfaas)
+					em.logMigratedPreviousFaas(faas22)
+				}
+			}
+		}
+		else{
+			em.logMigratedPreviousFaas(faas22)
+		}
+	}
+
+	boolean existPreviousFaas(prevfaas){
+		return em254.findPreviousFaas(prevfaas) != null 
+	}
+
+	void doMigrateSignatories(faas22){
+		def faaslist = em.findFaasListById(faas22)
+		if (faaslist){
+			def signatory = [refid:faaslist.objid, dtsigned:faaslist.issuedate]
+			signatory.assignee = [name:faaslist.appraisedby, title:faaslist.appraisedbytitle]
+			signatory.type = 'appraiser'
+			migrateSignatory(signatory)
+
+			signatory.assignee = [name:faaslist.approvedby, title:faaslist.approvedbytitle]
+			signatory.type = 'approver'
+			migrateSignatory(signatory)
+
+			// faas.taxmapper = [:]
+			// faas.taxmapperchief = [:]
+			// faas.appraiser = [:]
+			// faas.appraiserchief = [:]
+			// faas.recommender = [:]
+			// faas.provrecommender = [:]
+			// faas.provtaxmapper = [:]
+			// faas.provtaxmapperchief = [:]
+			// faas.provappraiser = [:]
+			// faas.provappraiserchief = [:]
+			// faas.provrecommender = [:]
+			// faas.provapprover = [:]
+			// faas.approver = [:]
+		}
+	}
+
+	void migrateSignatory(signatory){
+		def sid = signatory.refid + signatory.type
+		if (!existSignatory(sid)){
+			def s = [
+				objid  : sid,
+				refid  : signatory.refid, 
+				state  : signatory.type, 
+				startdate : signatory.dtsigned, 
+				enddate : signatory.dtsigned, 
+				assignee_name : signatory.assignee.name,
+				assignee_title : signatory.assignee.title,
+				actor_name    : signatory.assignee.name,
+				actor_title    : signatory.assignee.title
+			]
+			em254.insertFaasSignatory(s)
+		}
+	}
+
+	boolean existSignatory(sid){
+		return em254.findSignatoryById([objid:sid]) != null 
+	}
+
+	boolean existFaas(faas){
+		return em254.findFaasById(faas) != null 
+	}
+
+	boolean existFaasLog(faas){
+		em.findFaasLogById(faas) != null 
+	}
+	
+
+	boolean toBoolean(val, defaultvalue ){
+		if (val == null)
+			return defaultvalue
+		if (val instanceof Boolean)
+			return val 
+		return val.toString().toLowerCase().matches('y|yes|t|true|1')
+	}
+
+	/*==============================================================
+	*
+	*  MIGRATE FAAS CUSTOM
+	*
+	*==============================================================*/
+	void domigrateFaasCustom(faas22)	{
+		
+		println faas22.info.titletype + "***" + faas22.info.titleno + "****" + faas22.info.issuedate
+
+		def s = [
+				objid  : faas22.objid,
+				titletype  : faas22.info.titletype, 
+				titleno  : faas22.info.titleno, 
+				titledate : faas22.info.issuedate
+			]
+		em254.fixtitleno(s);
+		em.logMigratedFaas([objid:faas22.objid])
+	}
+}

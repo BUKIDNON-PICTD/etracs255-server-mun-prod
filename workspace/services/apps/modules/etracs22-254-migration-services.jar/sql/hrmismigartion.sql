@@ -1,0 +1,2 @@
+[getHRforPDS]
+SELECT * FROM namesforpds;

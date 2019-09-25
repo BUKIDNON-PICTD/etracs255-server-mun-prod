@@ -1,0 +1,470 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID;
+import com.rameses.util.*;
+
+class Entity22MigrationService {
+	
+	@PersistenceContext('main')
+	def main
+
+	@PersistenceContext("etracs22")
+	def em22; 
+
+	@ActiveDB(value='hrmismigartion', em='tagabukid_hrmis')
+	def emhr;
+
+	@ActiveDB("entitymultiple")
+	def	emmul; 
+
+	@ActiveDB("entityindividual")
+	def	emind; 
+
+	@ActiveDB("entityjuridical")
+	def	emjur; 
+
+	@ActiveDB('entity_address')
+	def emaddress
+
+	@Service('EntityService')
+	def entitySvc;
+
+	@Service("DateService")
+	def dateSvc;
+
+	@Service('SequenceService')
+	def seqSvc;
+
+	@Service("PersistenceService")
+    def persistenceService;
+
+    @Service()
+	def self 
+
+	@ProxyMethod
+	public void migrateEntity(entityid){
+		def entity = em22.sqlContext.createQuery('''
+			SELECT * FROM entity WHERE objid = $P{objid}
+			''').setParameter('objid',entityid).singleResult;
+
+	
+		entity.info = em22.serializer.read(entity.info);
+
+
+		if( 'individual'.equals(entity.entitytype) ) {
+			// buildEntity(entity)
+			buildEntityIndividual(entity) 
+		}
+		else if( 'multiple'.equals(entity.entitytype) ) {
+			// buildEntity(entity)
+
+			def members = em22.sqlContext.createQuery('''
+			SELECT * FROM entitymember WHERE entityid = $P{objid}
+			''').setParameter('objid',entity.objid).resultList;
+			
+			if (members.size() > 1){
+				entity.members = buildEntityMember(members)
+			}else{
+				entity.members = buildMissingMember(entity)
+			}				
+			buildEntityMultiple(entity) 
+			
+			
+		}
+		else if( 'juridical'.equals(entity.entitytype) ) {
+			// buildEntity(entity)
+			buildEntityJuridical(entity) 
+		}
+		else {
+			throw new Exception("Entity Type ${entity.entitytype} is not defined.")
+		}
+
+	}
+
+	@ProxyMethod
+	public void migrateEntityArray(){
+		def entity = emhr.getHRforPDS()
+
+		entity.each{
+			it.info = [
+				firstname:it.firstname,
+				middlename:it.middlename,
+				lastname:it.lastname,
+				birthdate:'1990-01-01',
+				birthplace:null,
+				citizenship:'FILIPINO',
+				gender:'M', 
+				civilstatus:null, 
+				profession:null,
+				tin:'forpds',
+				sss:null,
+				height:null,
+				weight:null]
+			it.name = it.fullname
+			it.address_text ='BUKIDNON'
+			it.mailingaddress = 'BUKIDNON'
+			it.entitytype = 'INDIVIDUAL'
+			it.entityname = it.fullname
+			it.entityaddress='BUKIDNON, MALAYBALAY CITY'
+			
+			// buildEntity(it)
+			def eaddress = buildEntityAddress(it)
+			eaddress.text = entity.entityaddress
+		    buildEntityIndividual(it) 
+		}
+		println "DONE"
+		
+		// buildEntity(entity)
+		// buildEntityIndividual(entity) 
+
+	}
+
+	void buildEntity(entity){
+		entity.objid = (entity.objid ? entity.objid:new UID()).toString()
+		def eaddress = buildEntityAddress(entity)
+    	eaddress.text = entity.entityaddress
+		def e = [
+			objid             : entity.objid,
+			// entityno       : prefix + seqSvc.getNextFormattedSeries( stype+ "_ENTITY" ),
+			name              : entity.entityname,
+			mailingaddress    : entity.entityaddress,
+			type              : entity.entitytype,
+			//sys_lastupdate  : dateSvc.buildCustomTimeStamp(dateSvc.serverDate),
+			//sys_lastupdateby: 'ETRACSADMIN',
+			remarks           : null,
+			entityname        : entity.entityname,
+			mobileno          : null,
+			phoneno           : null,
+			email             : null,
+			address           : eaddress
+		]
+		// // entitySvc.save(e)
+		// // println "TAE"*50
+		// // println e
+		// e._schemaname = 'entityindividual';
+  //       persistenceService.create( e );
+
+	
+		//emaddress.create(eaddress)
+	}
+
+	def buildEntityAddress(entity){
+		
+		def entityaddress = [
+			objid        	: 'A' + new UID(),
+			parentid		: entity.objid,
+			type    		: 'nonlocal',
+			addresstype  	: null,
+			barangay_objid  : null,
+			barangay_name  	: null,
+			city  			: null,
+			municipality 	: null,
+			province 		: null,
+			bldgno			: null,
+			bldgname		: null,
+			unitno			: null,
+			street			: null,
+			subdivision		: null,
+			pin 			: null
+		]
+		def address = entity.entityaddress.split(',')
+		def barangay = address[0];
+		
+		boolean hasWhiteSpace = containsWhiteSpace(barangay);
+		if(hasWhiteSpace){
+			barangay = barangay.split(' ')[0]
+		}
+
+		barangay = barangay + '%'
+
+		def addressinfo = main.sqlContext.createQuery('''
+			SELECT * FROM sys_org WHERE name LIKE $P{address_text} AND orgclass = 'BARANGAY'
+			''').setParameter('address_text',barangay).singleResult;
+
+		if (addressinfo){
+			
+			entityaddress.barangay_objid = addressinfo.objid
+			entityaddress.barangay_name = addressinfo.name
+				
+			def municipalityinfo = main.sqlContext.createQuery('''
+			SELECT * FROM sys_org WHERE objid = $P{objid}
+			''').setParameter('objid',addressinfo.parent.objid).singleResult;		
+
+			entityaddress.municipality = municipalityinfo.name
+
+			def provinceinfo = main.sqlContext.createQuery('''
+			SELECT * FROM sys_org WHERE objid = $P{objid}
+			''').setParameter('objid',municipalityinfo.parent.objid).singleResult;	
+
+			entityaddress.province = provinceinfo.name	
+			entityaddress.type = 'local'
+		}else{
+			if (address.grep('CITY')){
+				entityaddress.city = entity.entityaddress
+				entityaddress.addresstype = 'CITY'
+			}else{
+				entityaddress.municipality = entity.entityaddress
+				entityaddress.addresstype = 'MUNICIPALITY'
+			}
+
+		}
+		
+		return entityaddress
+	
+	}
+
+	def buildEntityIndividual(entity){
+		def eaddress = buildEntityAddress(entity)
+    	eaddress.text = entity.entityaddress
+		def entityindividual = [
+			objid  		: entity.objid,				
+			lastname 	: entity.info.lastname,
+			firstname 	: entity.info.firstname,
+			middlename 	: entity.info.middlename,
+			birthdate 	: entity.info.birthdate,
+			birthplace 	: entity.info.birthplace,
+			citizenship : entity.info.citizenship,
+			gender 		: entity.info.gender,
+			civilstatus : entity.info.civilstatus,
+			profession 	: entity.info.profession,
+			tin 		: entity.info.tin,
+			sss 		: entity.info.sss,
+			height 		: entity.info.height,
+			weight 		: entity.info.weight,
+			acr 		: null,
+			religion 	: null,
+			photo 		: null,
+			thumbnail 	: null,
+			address     : eaddress,
+		]
+
+		// emind.create(entityindividual)
+		entityindividual._schemaname = 'entityindividual';
+        persistenceService.create( entityindividual );
+
+       	em22.sqlContext.createExecutor('''
+			INSERT INTO etracs25_migrate_entity (objid) VALUES ($P{objid})
+		''')
+		.setParameter('objid', entity.objid)
+		.execute()
+
+		return persistenceService.read([ _schemaname: 'entityindividual', objid: entityindividual.objid ]);
+	}
+
+	void buildEntityMultiple(entity){
+		def eaddress = buildEntityAddress(entity)
+    	eaddress.text = entity.entityaddress
+		def entitymultiple = [
+			objid   : entity.objid,				
+			fullname: entity.entityname,
+			name    : entity.entityname,
+			address : eaddress,
+			members : entity.members,
+		]
+
+		// emmul.create(entitymultiple)
+		entitymultiple._schemaname = 'entitymultiple';
+        persistenceService.create( entitymultiple );
+
+       	em22.sqlContext.createExecutor('''
+			INSERT INTO etracs25_migrate_entity (objid) VALUES ($P{objid})
+		''')
+		.setParameter('objid', entity.objid)
+		.execute()
+	}
+
+	def buildEntityMember(member){
+		def entitymember = []
+		member.each{o->
+			def m = [
+				objid  					: o.objid,				
+				entityid 				: o.entityid,
+				itemno					: o.itemno,
+				prefix 					: o.prefix,
+				member_objid 			: o.taxpayerid,
+				member_name 			: o.taxpayername,
+				member_address_text 	: o.taxpayeraddress,
+				suffix 					: o.suffix,
+			]
+
+			if(isEntityMigrated(o.taxpayerid)){
+				entitymember.push(m);
+			}else{
+				if (entityExist(o.taxpayerid)){
+					self.migrateEntity(o.taxpayerid)
+					entitymember.push(m);
+				}else{
+					def newentity = [
+						objid      		: o.taxpayerid,
+						// entityno   		: "I" + seqSvc.getNextFormattedSeries( "INDIVIDUAL_ENTITY" ),
+						entityname 		: o.taxpayername,
+						entityaddress 	: o.taxpayeraddress,
+						entitytype 		: 'individual',
+						info			: [:],
+					]
+					def entityname = o.taxpayername.split(',')
+					
+					if (entityname.size() > 2){
+						newentity.info.firstname = entityname[2].replaceAll("\\s","")
+						newentity.info.lastname = entityname[0].replaceAll("\\s","") + " " + entityname[1].replaceAll("\\s","")
+					}else{
+						newentity.info.firstname = entityname[1].replaceAll("\\s","")
+						newentity.info.lastname = entityname[0].replaceAll("\\s","")
+					}
+
+					// buildEntity(newentity)
+					buildEntityIndividual(newentity) 
+					entitymember.push(m);
+				}
+				
+			}
+			
+		}
+		return entitymember
+	}
+
+	def buildMissingMember(entitymultiple){
+		def entitymember = []
+		def members = em22.sqlContext.createQuery('''
+		SELECT * FROM entity WHERE $P{entityname} LIKE CONCAT('%',entityname,'%')  AND objid <> $P{objid} AND entitytype = 'individual'
+		''').setParameter('entityname',entitymultiple.entityname).setParameter('objid',entitymultiple.objid).resultList;
+		
+		if (members.size > 0){
+			def x = 0;
+			members.each{
+				def m = [
+					objid  					: 'EM' + new UID(),				
+					entityid 				: it.entityno,
+					itemno					: x++,
+					prefix 					: null,
+					member_objid 			: it.objid,
+					member_name 			: it.entityname,
+					member_address_text 	: it.entityaddress,
+					suffix 					: null,
+				]
+
+				if(isEntityMigrated(it.objid)){
+					entitymember.push(m);
+				}else{
+					if (entityExist(it.objid)){
+						self.migrateEntity(it.objid)
+						entitymember.push(m);
+					}else{
+						def newentity = [
+							objid      		: it.objid,
+							// entityno   		: "I" + seqSvc.getNextFormattedSeries( "INDIVIDUAL_ENTITY" ),
+							entityname 		: it.entityname,
+							entityaddress 	: it.entityaddress,
+							entitytype 		: 'individual',
+							info			: [:],
+						]
+						def entityname = it.entityname.split(',')
+						
+						if (entityname.size() > 2){
+							newentity.info.firstname = entityname[2].replaceAll("\\s","")
+							newentity.info.lastname = entityname[0].replaceAll("\\s","") + " " + entityname[1].replaceAll("\\s","")
+						}else{
+							newentity.info.firstname = entityname[1].replaceAll("\\s","")
+							newentity.info.lastname = entityname[0].replaceAll("\\s","")
+						}
+
+						// buildEntity(newentity)
+						buildEntityIndividual(newentity) 
+						entitymember.push(m);
+					}
+					
+				}
+			}
+		}else{
+			//buildentity
+			def newentity = [
+				objid      		: 'E' + new UID(),
+				entityname 		: entitymultiple.entityname,
+				entityaddress 	: entitymultiple.entityaddress,
+				entitytype 		: 'individual',
+				info			: [firstname:entitymultiple.entityname,lastname:entitymultiple.entityname],
+			]
+			// def entityname = it.entityname.split(',')
+			
+			// if (entityname.size() > 2){
+			// 	newentity.info.firstname = entityname[2].replaceAll("\\s","")
+			// 	newentity.info.lastname = entityname[0].replaceAll("\\s","") + " " + entityname[1].replaceAll("\\s","")
+			// }else{
+			// 	newentity.info.firstname = entityname[1].replaceAll("\\s","")
+			// 	newentity.info.lastname = entityname[0].replaceAll("\\s","")
+			// }
+
+			// buildEntity(newentity)
+			def individual = buildEntityIndividual(newentity) 
+			def nm = [
+					objid  					: 'EM' + new UID(),				
+					entityid 				: individual.entityno,
+					itemno					: 1,
+					prefix 					: null,
+					member_objid 			: individual.objid,
+					member_name 			: individual.entityname,
+					member_address_text 	: entitymultiple.entityaddress,
+					suffix 					: null,
+				]
+
+			entitymember.push(nm);
+		}
+		
+		return entitymember
+	}
+
+	void buildEntityJuridical(entity){
+		def eaddress = buildEntityAddress(entity)
+    	eaddress.text = entity.entityaddress
+		def entityjuridical = [
+			objid                 : entity.objid,				
+			tin                   : entity.info.tin,
+			name                  : entity.entityname,
+			dtregistered          : entity.info.dtregistered,
+			orgtype               : entity.info.orgtype,
+			nature                : entity.info.nature,
+			administrator_name    : null,
+			administrator_address : null,
+			administrator_position: null,
+			address               : eaddress,
+		]
+
+		// emjur.create(entityjuridical)
+
+		entityjuridical._schemaname = 'entityjuridical';
+        persistenceService.create( entityjuridical );
+
+       	em22.sqlContext.createExecutor('''
+			INSERT INTO etracs25_migrate_entity (objid) VALUES ($P{objid})
+		''')
+		.setParameter('objid', entity.objid)
+		.execute()
+	}
+
+	public static boolean containsWhiteSpace(final String testCode){
+	    if(testCode != null){
+	        for(int i = 0; i < testCode.length(); i++){
+	            if(Character.isWhitespace(testCode.charAt(i))){
+	                return true;
+	            }
+	        }
+	    }
+	    return false;
+	}
+
+	def isEntityMigrated(entityid){
+
+		return em22.sqlContext.createQuery('''
+			SELECT * FROM etracs25_migrate_entity
+			WHERE objid = $P{objid}
+			''').setParameter('objid',entityid).singleResult;
+	}
+
+	def entityExist(entityid){
+
+		return em22.sqlContext.createQuery('''
+			SELECT * FROM entity WHERE objid = $P{objid}
+			''').setParameter('objid',entityid).singleResult;
+	}
+
+}

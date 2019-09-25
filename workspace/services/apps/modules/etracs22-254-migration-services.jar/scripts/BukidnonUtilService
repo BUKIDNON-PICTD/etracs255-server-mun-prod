@@ -1,0 +1,193 @@
+
+import com.rameses.annotations.*
+import com.rameses.common.*;
+import com.rameses.services.extended.*;
+
+
+class BukidnonUtilService
+{
+    @Service('FAASService')
+    def faasSvc 
+
+    @Service('RPUService')
+    def rpuSvc 
+
+    @Service()
+    def self 
+
+    @ActiveDB('etracs254rpt')
+    def em
+
+    @Service('ETRACS22To254LandRpu')
+    def em22landrpu
+
+    @Service('ETRACS22To254BldgRpu')
+    def em22bldgrpu
+
+    @ActiveDB(value='etracs22rpt', em='etracs22')
+    def em22 
+
+    @Service('LandRPUService')
+    def landrpusvc
+
+    @Service('BldgRPUService')
+    def bldgrpusvc
+
+
+    @ProxyMethod
+    public List getRpusForRecalc(params){
+        return em.getRpusForRecalc(params)
+    }
+
+    @ProxyMethod
+    public def recalcrpuassessmentData(params) {
+        if (!params.count) throw new Exception('Count is required')
+        
+        def faases = getRpusForRecalc(params);
+        println 'Recalculating '+ faases.size()
+        faases.each{it->
+           try{
+               self.recalcAssessment(it);
+               em.logRecalculatedFaas(it)
+           }catch(e){
+               println e
+               logMigrationErrors(it.objid,e.getMessage() + "  docstate:" + it.docstate+ "  tdno:" + it.tdno+ "  fullpin:" + it.fullpin)
+           }
+        }
+        return faases.size()
+    }  
+
+    @ProxyMethod
+    public void recalcAssessment( faas ) {
+        println "Recalculating..." + faas.objid
+        faas = faasSvc.openFaas(faas)
+        faas.rpu.txntype = faas.txntype
+        faas.rpu.putAll(rpuSvc.calculateAssessment(faas.rpu))
+        faasSvc.updateFaas(faas)
+    }
+
+     @ProxyMethod
+    public def migrateMissingLD(params) {
+        if (!params.count) throw new Exception('Count is required')
+        em.disablekeycheck();
+        def faases = em22.getFaasForLD(params);
+        println 'MigratingLD '+ faases.size()
+        faases.each{it->
+           // try{
+           //     it.rpu.landdetails     = getMigrateLandDetail(it.rpu)
+           // }catch(e){
+           //     println e
+           //     //logMigrationErrors(it.objid,e.getMessage() + "  docstate:" + it.docstate+ "  tdno:" + it.tdno+ "  fullpin:" + it.fullpin)
+           // }
+            println 'Migrating FAAS ' + it.objid;
+            it.rpu       = em22.serializer.read(it.rpu);
+            it.rp        = em22.serializer.read(it.rp);
+            def faas     = em.findFaasById(it);
+            it.rpu.objid = faas.rpuid;
+
+
+            it.newrpu    = em22landrpu.migrateLandRpu(it.rpu);
+            
+            it.newrpu.state          = it.docstate
+            it.newrpu.realpropertyid = it.rp.objid
+            it.newrpu.rputype        = it.rpu.rputype
+            it.newrpu.ry             = it.rpu.ry
+            it.newrpu.fullpin        = it.rpu.fullpin
+            it.newrpu.suffix         = it.rpu.suffix
+            it.newrpu.subsuffix      = it.rpu.subsuffix
+            it.newrpu.classification = [objid:it.rpu.classid]
+            it.newrpu.exemptiontype  = (it.rpu.exemptid ? [objid:it.rpu.exemptid] : null)
+            if (!it.rpu.taxable && it.newrpu.exemptiontype == null){
+                it.newrpu.taxable = true
+            }
+            else {
+                it.newrpu.taxable = it.rpu.taxable
+            }
+            it.newrpu.totalareaha    = it.rpu.totalareaha
+            it.newrpu.totalareasqm   = it.rpu.totalareasqm
+            it.newrpu.totalbmv       = it.rpu.totalbmv
+            it.newrpu.totalmv        = it.rpu.totalmv
+            it.newrpu.totalav        = it.rpu.totalav
+            it.newrpu.hasswornamount = toBoolean(it.rpu.info.swornstatement, false)
+            it.newrpu.swornamount    = (it.rpu.info.swornamount == null ? 0.0 : it.rpu.info.swornamount)
+            it.newrpu.useswornamount = toBoolean(it.rpu.info.useswornamount, false)
+            it.newrpu.previd         = it.rpu.previd
+            it.newrpu.rpumasterid    = it.rpu.rpumasterid
+            it.newrpu.reclassed      = false
+            it.rpu                   = it.newrpu
+
+            landrpusvc.createLandRpu2(it.rpu);
+            em22.logMigratedLD(it);
+        }
+        em.enablefkcheck();
+        return faases.size()
+    }  
+
+     @ProxyMethod
+    public def migrateMissingBldgUse(params) {
+        if (!params.count) throw new Exception('Count is required')
+        em.disablekeycheck();
+        def faases = em22.getFaasForBldgUse(params);
+        println 'MigratingBldgUse '+ faases.size()
+        faases.each{it->
+           // try{
+           //     it.rpu.landdetails     = getMigrateLandDetail(it.rpu)
+           // }catch(e){
+           //     println e
+           //     //logMigrationErrors(it.objid,e.getMessage() + "  docstate:" + it.docstate+ "  tdno:" + it.tdno+ "  fullpin:" + it.fullpin)
+           // }
+            println 'Migrating FAAS ' + it.objid;
+            it.rpu       = em22.serializer.read(it.rpu);
+            it.rp        = em22.serializer.read(it.rp);
+            def faas     = em.findFaasById(it);
+            it.rpu.objid = faas.rpuid;
+            def bldgrpu      = em.findBldgRpuById2(faas);
+            it.rpu.landfaas = [rpuid:bldgrpu.landrpuid];
+            it.newrpu    = em22bldgrpu.migrateBldgRpu(it.rpu);
+            
+            it.newrpu.state          = it.docstate
+            it.newrpu.realpropertyid = it.rp.objid
+            it.newrpu.rputype        = it.rpu.rputype
+            it.newrpu.ry             = it.rpu.ry
+            it.newrpu.fullpin        = it.rpu.fullpin
+            it.newrpu.suffix         = it.rpu.suffix
+            it.newrpu.subsuffix      = it.rpu.subsuffix
+            it.newrpu.classification = [objid:it.rpu.classid]
+            it.newrpu.exemptiontype  = (it.rpu.exemptid ? [objid:it.rpu.exemptid] : null)
+            if (!it.rpu.taxable && it.newrpu.exemptiontype == null){
+                it.newrpu.taxable = true
+            }
+            else {
+                it.newrpu.taxable = it.rpu.taxable
+            }
+            it.newrpu.totalareaha    = it.rpu.totalareaha
+            it.newrpu.totalareasqm   = it.rpu.totalareasqm
+            it.newrpu.totalbmv       = it.rpu.totalbmv
+            it.newrpu.totalmv        = it.rpu.totalmv
+            it.newrpu.totalav        = it.rpu.totalav
+            it.newrpu.hasswornamount = toBoolean(it.rpu.info.swornstatement, false)
+            it.newrpu.swornamount    = (it.rpu.info.swornamount == null ? 0.0 : it.rpu.info.swornamount)
+            it.newrpu.useswornamount = toBoolean(it.rpu.info.useswornamount, false)
+            it.newrpu.previd         = it.rpu.previd
+            it.newrpu.rpumasterid    = it.rpu.rpumasterid
+            it.newrpu.reclassed      = false
+            it.rpu                   = it.newrpu
+
+            bldgrpusvc.createBldgRpu2(it.rpu);
+            em22.logMigratedBldgRPU(it);
+        }
+        em.enablefkcheck();
+        return faases.size()
+    }  
+
+    boolean toBoolean(val, defaultvalue ){
+        if (val == null)
+            return defaultvalue
+        if (val instanceof Boolean)
+            return val 
+        return val.toString().toLowerCase().matches('y|yes|t|true|1')
+    }
+
+}
+
+

@@ -1,0 +1,145 @@
+import com.rameses.annotations.*
+import com.rameses.common.*
+import java.rmi.server.UID;
+import com.rameses.util.*;
+
+class ETRACS22To254MachRpu
+{
+	@ActiveDB('machrpu')	
+	def rpuEm 
+
+	@ActiveDB('etracs254rpt')
+	def em254
+
+	@ActiveDB(value='etracs22rpt', em='etracs22')
+	def em22
+
+	@ProxyMethod
+	public def migrateMachRpu(rpu){
+		def newrpu = [:]
+		if (!rpu.objid){
+			rpu.objid = 'RPU' + new java.rmi.server.UID()
+		}
+		if (!existMachRpu(rpu)){
+			newrpu = getMigrateMachRpu(rpu)
+			newrpu.machuses = getMigrateMachUses(rpu)
+
+		}
+		return newrpu
+	}
+
+	def getMigrateMachRpu(rpu){
+			def newrpu = [
+				objid 			: rpu.objid,
+				landrpuid 		: rpu.landfaas.rpuid,
+			]
+			return newrpu
+	}
+
+	boolean existMachRpu(rpu){
+		return em254.findMachRpuById(rpu) != null 
+	}
+
+	def getMigrateMachUses(rpu){
+		def machuses = []
+		rpu.info.machuses.each{
+			if (!existMachUse(it)){
+				def newmu = [
+					objid 			: it.objid,
+					machrpuid 		: rpu.objid,
+					basemarketvalue : new BigDecimal(it.basemarketvalue),
+					marketvalue 	: new BigDecimal(it.marketvalue),
+					assesslevel 	: new BigDecimal(it.assesslevel),
+					assessedvalue 	: new BigDecimal(it.assessedvalue),
+					actualuse 		: [objid:it.actualuseid],
+				]
+				newmu.machines = getMigrateMachDetails(rpu, it)
+				// println getMigrateMachDetails(rpu, it)
+				// rpuEm.create(newmu, 'machuse')
+				machuses.push(newmu)
+			}
+		}
+
+		return machuses
+	}
+
+	boolean existMachUse(mu){
+		return em254.findMachUseById(mu) 
+	}
+
+	def getMigrateMachDetails(rpu, mu){
+		def machd = []
+		mu.machdetails.each{md->
+			if (!existMachDetail(md)){
+				def newmd = [
+					objid            : md.objid,
+					machuseid        : mu.objid, 
+					machrpuid        : rpu.objid, 
+					machine          : [objid:md.machineid],
+					operationyear    : md.operationyear,
+					replacementcost  : new BigDecimal(md.replacementcost),
+					depreciation     : new BigDecimal(md.depreciation),
+					depreciationvalue: new BigDecimal(md.depreciationvalue),
+					basemarketvalue  : new BigDecimal(md.basemarketvalue),
+					marketvalue      : new BigDecimal(md.marketvalue),
+					assesslevel      : new BigDecimal(md.assesslevel),
+					assessedvalue    : new BigDecimal(md.assessedvalue),
+					brand            : md.brand,
+					capacity         : md.capacity,
+					model            : md.model,
+					serialno         : md.serialno,
+					status           : md.status,
+					yearacquired     : md.yearacquired,
+					estimatedlife    : md.estimatedlife,
+					remaininglife    : md.remaininglife,
+					yearinstalled    : md.yearinstalled,
+					yearsused        : md.yearsused,
+					originalcost     : new BigDecimal(md.originalcost),
+					freightcost      : new BigDecimal(md.freightcost),
+					insurancecost    : new BigDecimal(md.insurancecost),
+					installationcost : new BigDecimal(md.installationcost),
+					brokeragecost    : new BigDecimal(md.brokeragecost),
+					arrastrecost     : new BigDecimal(md.arrastrecost),
+					othercost        : new BigDecimal(md.othercost),
+					acquisitioncost  : new BigDecimal(md.acquisitioncost),
+					feracid          : md.feracid,
+					ferac            : md.ferac,
+					forexid          : md.forexid,
+					forex            : md.forex,
+					residualrate     : new BigDecimal(md.residualrate),
+					conversionfactor : new BigDecimal(md.conversionfactor),
+					useswornamount   : toBoolean(md.useswornamount, false),
+					swornamount      : new BigDecimal(md.swornamount),
+					imported         : toBoolean(md.imported, false),
+					newlyinstalled   : toBoolean(md.newlyinstalled, false),
+					autodepreciate   : toBoolean(md.autodepreciate, true),
+					taxable			 : true
+				]
+				// println newmd
+				//rpuEm.create(newmd, 'machdetail')
+				//println "MACHDETAIL migrated"
+				machd.push(newmd)
+			}
+		}
+		return machd
+	}
+
+	void doMigrateAssessment(rpu){
+		em254.insertMachRpuAssessment(rpu)
+	}
+
+
+	boolean existMachDetail(md){
+		return em254.findMachDetailById(md) != null 
+	}
+
+	boolean toBoolean(val, defaultvalue ){
+		if (val == null)
+			return defaultvalue
+		if (val instanceof Boolean)
+			return val 
+		return val.toString().toLowerCase().matches('y|yes|t|true|1')
+	}
+
+	
+}
