@@ -1,6 +1,6 @@
 <app>
 <env>
-app.title=ETRACS v2.5 PGB 255.002 PATCH-255-03013.019 formallguname
+app.title=ETRACS v2.5 PGB 255.003 PATCH-255-03013.019 formallguname
 app.host=localhost:8070
 app.cluster=osiris3
 app.context=etracs25
@@ -45,7 +45,6 @@ report.custom=buk
 
 	<!-- main app libraries -->
 	<module file="rameses-treasury-common.jar" version="2.55"/>
-
 	<module file="rameses-client-notification2.jar" version="2.55"/>	
 	<module file="rameses-etracs-main.jar" version="2.55"/>
 	<module file="rameses-gov-depositslip.jar" version="2.55"/>
@@ -69,13 +68,13 @@ report.custom=buk
 
 
 	<!-- rptis libraries -->
-	<module file="rameses-gov-etracs-rptis.jar" version="2.55"/>
-	<module file="rameses-gov-etracs-rptis-landtax.jar" version="2.55"/>
-	<module file="rameses-gov-etracs-rptis-landtax-report.jar" version="2.55"/>
-	<module file="rameses-gov-etracs-rptis-municipality.jar" version="2.55"/>
-	<module file="rameses-gov-etracs-rptis-report.jar" version="2.55"/>
-	<module file="rameses-gov-etracs-rptis-transmittal.jar" version="2.55"/>
-	<module file="rameses-gov-etracs-signatory-template.jar" version="2.55"/>
+	<module file="rameses-gov-etracs-rptis.jar" version="2.56"/>
+	<module file="rameses-gov-etracs-rptis-landtax.jar" version="2.56"/>
+	<module file="rameses-gov-etracs-rptis-landtax-report.jar" version="2.56"/>
+	<module file="rameses-gov-etracs-rptis-municipality.jar" version="2.56"/>
+	<module file="rameses-gov-etracs-rptis-report.jar" version="2.56"/>
+	<module file="rameses-gov-etracs-rptis-transmittal.jar" version="2.56"/>
+	<module file="rameses-gov-etracs-signatory-template.jar" version="2.56"/>
 	
 	<module file="plugins/rameses-queueing.jar" version="2.55"/>
 
