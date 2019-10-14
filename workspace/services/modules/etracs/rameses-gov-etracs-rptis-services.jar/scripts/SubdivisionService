@@ -113,7 +113,7 @@ class SubdivisionService
     @ProxyMethod
     public def open( entity ) {
         //println entity
-        def subdivision = em.findSubdivisionById([objid:entity])
+        def subdivision = em.findSubdivisionById(entity)
         if (!subdivision) throw new Exception('Subdivision does not exist or has already been deleted.')
         subdivision.txntype = faasSvc.getTxnType(TXNTYPE_SD)
         subdivision.autonumber = util.toBoolean(subdivision.autonumber, false)
