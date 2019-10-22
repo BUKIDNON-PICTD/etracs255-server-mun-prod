@@ -6,8 +6,8 @@ app.cluster=osiris3
 app.context=etracs25
 app.help=http://localhost:8080/help
 app.loader=com.rameses.osiris2.client.OsirisAppLoader
-readTimeout=180000
-connectionTimeout=180000
+readTimeout=200000
+connectionTimeout=200000
 
 filemgmt.enabled=false
 
