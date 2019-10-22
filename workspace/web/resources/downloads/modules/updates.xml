@@ -85,6 +85,7 @@ report.custom=buk
 	
 	<module file="plugins/rameses-queueing.jar" version="2.55"/>
 	<module file="customcommon/rameses-gov-treasury-municipality.jar" version="2.56"/>
+	<module file="customcommon/gov-lgu-bukidnon-rpt-muni.jar" version="2.56"/>
 	<!-- custom modules -->
 
 </modules>
