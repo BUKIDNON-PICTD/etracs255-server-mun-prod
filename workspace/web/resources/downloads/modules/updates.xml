@@ -1,13 +1,17 @@
 <app>
 <env>
+<<<<<<< HEAD
 app.title=ETRACS v2.5 PGB-255.006 RPT-03021 formallguname
+=======
+app.title=ETRACS v2.5 PGB-255.007 RPT-03021 formallguname
+>>>>>>> f826f32414e2e7ab05c3158da9e01bdcbe83eaa6
 app.host=localhost:8070
 app.cluster=osiris3
 app.context=etracs25
 app.help=http://localhost:8080/help
 app.loader=com.rameses.osiris2.client.OsirisAppLoader
-readTimeout=180000
-connectionTimeout=180000
+readTimeout=200000
+connectionTimeout=200000
 
 filemgmt.enabled=false
 
@@ -85,7 +89,7 @@ report.custom=buk
 	
 	<module file="plugins/rameses-queueing.jar" version="2.55"/>
 	<module file="customcommon/rameses-gov-treasury-municipality.jar" version="2.56"/>
-	<module file="customcommon/gov-lgu-bukidnon-rpt-muni.jar" version="2.56"/>
+	<module file="customcommon/gov-lgu-bukidnon-rpt-muni.jar" version="2.57"/>
 	<!-- custom modules -->
 
 </modules>
