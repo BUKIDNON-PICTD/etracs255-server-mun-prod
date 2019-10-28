@@ -11,6 +11,9 @@ class CollectionVoucherRCDReportService {
 	@ActiveDB('collectionvoucher_rcd_report') 
 	def rcd_em; 
 
+	@ActiveDB('remittance_rcd_report') 
+	def rcd2_em; 
+
 	@Service('NumberService')
 	def numSvc; 
 
