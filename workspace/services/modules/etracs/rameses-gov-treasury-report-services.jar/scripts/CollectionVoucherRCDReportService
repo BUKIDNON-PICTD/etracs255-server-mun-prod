@@ -37,6 +37,28 @@ class CollectionVoucherRCDReportService {
 		result.remittances = rcd_em.getRemittances( p ); 
 		result.collectionsummaries = rcd_em.getCollectionSummaries( p ); 
 		result.payments = rcd_em.getOtherPayments( p ); 
+		// rufy hack
+		def afs = []
+		result.remittances.each{ x->
+			afs += rcd2_em.getRemittedAFs( x ); 
+		}
+		
+		afs.eachWithIndex{ o,idx-> o.lineno = idx; } 
+
+		result.remittedforms = afs.findAll{ it.formtype == 'serial' } 
+		result.nonserialremittances = afs.findAll{ it.formtype != 'serial' } 
+		afs.clear(); 
+
+		buildAF( result.remittedforms ); 
+		buildAF( result.nonserialremittances ); 
+		result.nonserialremittances.each{
+			it.receivedamt = (it.qtyreceived ? it.qtyreceived : 0) * it.denomination; 
+			it.beginamt = (it.qtybegin ? it.qtybegin : 0) * it.denomination; 
+			it.issuedamt = (it.qtyissued ? it.qtyissued : 0) * it.denomination; 
+			it.endingamt = (it.qtyending ? it.qtyending : 0) * it.denomination; 
+		}
+		// rufy hack
+
 		resolveCompatibility( result ); 
 		return result; 
 	} 
