@@ -16,9 +16,6 @@ class RealPropertyService
 	@DataContext('rysetting_land')
 	def em_landsetting 	
 
-	@DataContext('faas_list')
-	def em_faas_list
-
     def SECTION_NEW_MAX  	= 3
 	def PARCEL_NEW_MAX  	= 2
 	def SECTION_OLD_MAX  	= 2
@@ -158,31 +155,11 @@ class RealPropertyService
 
     	def rp = em_realproperty.find([pin:params.pin, ry:params.ry]).first()
     	if (!rp) {
-    		rp = em_realproperty.find([pin:params.pin.replaceAll('-',''), ry:params.ry]).first()
-    		if (!rp) {
-    			return
-    		}
+    		return
     	}
     	if (params.claimno && rp.claimno != params.claimno){
     		return
     	}
-
-
-    	//check reuse pin option 
-    	def reusepin = util.toBoolean(var.get('assessor_reuse_cancelled_pin'), false)
-    	if (reusepin){
-	    	def currentpins = em_faas_list.select('tdno').find([realpropertyid: rp.objid, state: 'CURRENT', rputype: 'land']).list()
-	    	if (!currentpins) {
-	    		return 
-	    	} else {
-	    		def msg = 'PIN ' + params.pin + ' is currently referenced by '
-	    		msg += 'TD No(s). ' + currentpins.tdno.join(', ') + '.\n\n'
-	    		msg += 'Revise the PIN of these properties before reusing the new PIN'
-	    		throw new Exception(msg)
-	    	}
-    	}
-
-
     	throw new Exception('PIN No. ' + params.pin + ' already exist.')
     }
 
@@ -199,20 +176,13 @@ class RealPropertyService
         	throw new Exception('Invalid section. Section must be less than or equal to 99.')
         }
 
-        if (entity.pintype == 'new'){
-        	def allowedlength = util.toInteger(var.getProperty('assessor_allowed_new_parcel_length', 2))
-        	if (util.isTrue(var.assessor_allow_3_digit_parcel)) {
-        		allowedlength = 3
-        	}
-        	if (entity.parcel?.length() > allowedlength) {
-        		throw new Exception('Invalid parcel. Parcel must be less than or equal to ' + ('9'*allowedlength))
-        	}
+        if (!util.isTrue(var.assessor_allow_3_digit_parcel)){
+	        if (entity.pintype == 'new' && entity.parcel?.length() > 2){
+	        	throw new Exception('Invalid parcel. Parcel must be less than or equal to 99.')
+	        }
         }
-        if (entity.pintype == 'old'){
-        	def allowedlength = util.toInteger(var.getProperty('assessor_allowed_old_parcel_length', 3))
-        	if (entity.parcel?.length() > allowedlength) {
-        		throw new Exception('Invalid parcel. Parcel must be less than or equal to ' + ('9'*allowedlength) )
-        	}
+        if (entity.pintype == 'old' && entity.parcel?.length() > 3){
+        	throw new Exception('Invalid parcel. Parcel must be less than or equal to 999.')
         }
 	}
  
@@ -228,7 +198,12 @@ class RealPropertyService
 
 	@ProxyMethod
 	public void updateBoundaries( entity ) {
-		em_realproperty.update(entity)
+		def params = [:]
+		params.north = entity.north
+		params.east = entity.east
+		params.west = entity.west
+		params.south = entity.south
+		em_realproperty.find([objid:entity.objid]).update(params)
 	}
 
 	@ProxyMethod 

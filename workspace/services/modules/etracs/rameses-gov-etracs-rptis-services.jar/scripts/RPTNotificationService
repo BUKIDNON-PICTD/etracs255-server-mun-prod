@@ -39,8 +39,8 @@ class RPTNotificationService
             env.ORGCODE = org.code 
         }
         return [
-            sender   : (env.FULLNAME ? env.FULLNAME : 'system'), 
-            senderid : (env.USERID ? env.USERID : 'system'),
+            sender   : env.FULLNAME, 
+            senderid : env.USERID,            
             origin   : env.ORGID.replaceAll('-.*?',''),
             data     : asyncreq, 
             filetype : null,

@@ -68,28 +68,20 @@ class PlantTreeRPUService
             resolveLandRpu(objid)
             rpu = em.read([objid:objid])
         }
-        if (rpu) {
-            rpu.planttrees  = getPlantTreeDetails(rpu)
-            rpu.assessments = em.getAssessments(rpu)
-        } else {
-            rpu = [objid: objid]
-            rpu.planttrees = []
-            rpu.assessments = []
+        if (!rpu) {
+            throw new Exception('Plant/Tree RPU does not exists or has been deleted.')
         }
+        rpu.planttrees  = getPlantTreeDetails(rpu)
+        rpu.assessments = em.getAssessments(rpu)
         return rpu 
     }
 
 
     @ProxyMethod
     public def deletePlantTreeRpu(rpu){
-    	deleteItems(rpu)
+    	rpu.planttrees.each{ em.delete(it, SCHEMA_DETAIL) }
         em.delete(rpu)
     }
-
-    @ProxyMethod
-	public def deleteItems(rpu) {
-		rpu.planttrees.each{ em.delete(it, SCHEMA_DETAIL) }
-	}    
 
 
     @ProxyMethod

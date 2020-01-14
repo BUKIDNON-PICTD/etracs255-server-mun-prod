@@ -66,31 +66,22 @@ class MachRPUService
     @ProxyMethod
     public def openMachRpu( objid ) {
         def rpu = em.read([objid:objid])
-        if (rpu) {
-            rpu.machuses  = getMachUses(rpu)
-            rpu.assessments = em.getAssessments(rpu)
-            rpu.bldgmaster  = em.findBldgMaster(rpu.bldgmaster)
-        } else {
-            rpu = [objid: objid]
-            rpu.machuses = []
-            rpu.assessments = []
-            rpu.bldgmaster = []
+        if (!rpu) {
+            throw new Exception('Machine RPU does not exists or has been deleted.')
         }
+        rpu.machuses  = getMachUses(rpu)
+        rpu.assessments = em.getAssessments(rpu)
+        rpu.bldgmaster  = em.findBldgMaster(rpu.bldgmaster)
         return rpu 
     }
 
 
     @ProxyMethod
     public def deleteMachRpu(rpu){
-        deleteItems(rpu)
+        em.deleteAllMachDetails(rpu)
+        em.deleteAllMachUses(rpu)
         em.delete(rpu)
     }
-
-	@ProxyMethod
-	public def deleteItems(rpu) {
-		em.deleteAllMachDetails(rpu)
-        em.deleteAllMachUses(rpu)
-	}    
 
 
     @ProxyMethod
@@ -175,16 +166,13 @@ class MachRPUService
 
 
     void calculateDepreciation( machine ) {
-        if (machine.replacementcost == null) machine.replacementcost = 0
-        if (machine.depreciation == null) machine.depreciation = 0
-        
         if( util.isTrue(machine.autodepreciate) && machine.estimatedlife > 0) {
             def dep = machine.remaininglife / machine.estimatedlife
             dep = (1 - dep) * 100;
             if (dep > (100 - getResidualRate())) {
                 dep = 100 - getResidualRate()
             }
-            machine.depreciation = numberSvc.roundA( dep, 6)
+            machine.depreciation = numberSvc.roundA( dep, 0 )
             machine.depreciationvalue =  numberSvc.round( machine.replacementcost *  machine.depreciation / 100.0 )
         }
         else {

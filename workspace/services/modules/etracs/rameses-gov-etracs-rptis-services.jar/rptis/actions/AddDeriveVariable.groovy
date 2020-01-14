@@ -8,6 +8,8 @@ public class AddDeriveVariable implements RuleActionHandler {
 	def request
 	
 	public void execute(def params, def drools) {
+		println params.refid.class
+
 		def refid = params.refid 
 		def varid = params.var.key
 		def objid = params.var.key + refid

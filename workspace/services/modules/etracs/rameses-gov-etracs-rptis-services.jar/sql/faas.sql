@@ -176,13 +176,20 @@ ORDER BY f.tdno
 
 
 [getLookupFaas]
-SELECT * 
-FROM vw_faas_lookup
+SELECT 
+	${columns}
+FROM faas f
+	INNER JOIN faas_list fl on f.objid = fl.objid 
+	INNER JOIN rpu r ON f.rpuid = r.objid 
+	INNER JOIN realproperty rp ON f.realpropertyid = rp.objid 
+	INNER JOIN propertyclassification pc ON r.classification_objid = pc.objid 
+	INNER JOIN barangay b ON rp.barangayid = b.objid 
+	INNER JOIN entity e on f.taxpayer_objid = e.objid 
+	LEFT JOIN rpttracking t ON f.objid = t.objid 
 where 1=1  
-${fixfilters}
 ${filters}
+${fixfilters}
 ${orderby}
-
 
 
 
@@ -381,7 +388,7 @@ WHERE f.rpuid = x.landrpuid
 
 
 [findLandFaasUnderTransaction]
-SELECT f.objid, f.state, tdno, utdno 
+SELECT f.objid, tdno, utdno 
 FROM faas f
 	inner join rpu r on f.rpuid = r.objid 
 where f.fullpin = $P{pin}

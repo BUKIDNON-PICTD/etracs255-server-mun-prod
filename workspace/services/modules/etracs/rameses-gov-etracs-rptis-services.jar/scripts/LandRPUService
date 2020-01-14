@@ -85,32 +85,21 @@ class LandRPUService
 	@ProxyMethod
 	public def openLandRpu( objid ) {
 		def landrpu = em.read([objid:objid])
-		if (landrpu) {
-			landrpu.idleland			= util.toBoolean(landrpu.idleland, false)
-			landrpu.publicland			= util.toBoolean(landrpu.publicland, false)
-			landrpu.landdetails 		= getLandDetails(landrpu)
-			landrpu.planttrees 			= getPlantTrees(landrpu)
-			landrpu.landadjustments 	= getLandAdjustments(landrpu)
-			landrpu.assessments 		= em.getAssessments(landrpu)
-		} else {
-			landrpu = [objid: objid, idleland: false, publicland: false]
-			landrpu.landdetails = []
-			landrpu.planttrees = []
-			landrpu.landadjustments = []
-			landrpu.assessments = []
+		if (!landrpu) {
+			return [landdetails:[], planttrees:[], landadjustments:[]]
 		}
+		landrpu.idleland			= util.toBoolean(landrpu.idleland, false)
+		landrpu.publicland			= util.toBoolean(landrpu.publicland, false)
+		landrpu.landdetails 		= getLandDetails(landrpu)
+		landrpu.planttrees 			= getPlantTrees(landrpu)
+		landrpu.landadjustments 	= getLandAdjustments(landrpu)
+		landrpu.assessments 		= em.getAssessments(landrpu)
 		return landrpu 
 	}
 
 
 	@ProxyMethod
 	public def deleteLandRpu(rpu){
-		deleteItems(rpu)
-		em.delete(rpu)
-	}
-
-	@ProxyMethod
-	public def deleteItems(rpu) {
 		rpu.planttrees.each{
 			ptem.delete(it, SCHEMA_PLANTTREE_DETAIL)
 		}
@@ -128,6 +117,7 @@ class LandRPUService
 		}
 		em.deleteAdjustmentParametersByRpu([ landrpuid: rpu.objid ]); 
 		em.deleteLandAdjustments(rpu)
+		em.delete(rpu)
 	}
 
 

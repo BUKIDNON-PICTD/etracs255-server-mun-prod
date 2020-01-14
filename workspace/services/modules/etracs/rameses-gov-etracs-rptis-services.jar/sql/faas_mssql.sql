@@ -177,8 +177,16 @@ ORDER BY f.tdno
 
 
 [getLookupFaas]
-SELECT * 
-FROM vw_faas_lookup
+SELECT 
+	${columns}
+FROM faas f
+	INNER JOIN faas_list fl on f.objid = fl.objid 
+	INNER JOIN rpu r ON f.rpuid = r.objid 
+	INNER JOIN realproperty rp ON f.realpropertyid = rp.objid 
+	INNER JOIN propertyclassification pc ON r.classification_objid = pc.objid 
+	INNER JOIN barangay b ON rp.barangayid = b.objid 
+	INNER JOIN entity e on f.taxpayer_objid = e.objid 
+	LEFT JOIN rpttracking t ON f.objid = t.objid 
 where 1=1  
 ${filters}
 ${fixfilters}
@@ -631,9 +639,8 @@ update faas_list set tdno = $P{tdno} where objid = $P{objid}
 update rptledger set tdno = $P{tdno} where faasid = $P{objid} 
 
 [updateLedgerFaasTdNo]
-update rlf set 
+update rptledgerfaas rlf, rptledger rl set 
 	rlf.tdno = $P{tdno} 
-from rptledgerfaas rlf, rptledger rl
 where rlf.rptledgerid = rl.objid 
 and rlf.faasid = $P{objid} 
 

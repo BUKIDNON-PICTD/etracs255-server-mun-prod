@@ -1,6 +1,5 @@
 import com.rameses.common.*
 import com.rameses.annotations.*
-import com.rameses.services.extended.*
 import java.rmi.server.UID
 
 class CancelAnnotationService 
@@ -25,9 +24,6 @@ class CancelAnnotationService
 
 	@Service('RPTUtil')
 	def util
-
-	@DataContext('cancelannotation')
-	def em_cancelannotation
 
 
 
@@ -58,8 +54,8 @@ class CancelAnnotationService
 
 
 	@ProxyMethod
-	public def init( annotation ) {
-		annotation = annotationSvc.open(annotation)
+	public def initCancelAnnotation( annotationid ) {
+		def annotation = annotationSvc.openAnnotation(annotationid)
 		validateAnnotationState(annotation)
 		txnRef.checkReference(annotation.objid)
 		return [
@@ -73,8 +69,8 @@ class CancelAnnotationService
 	
 
 	@ProxyMethod
-	public Map create( cancelannotation ) {
-		def annotation = annotationSvc.open([objid: cancelannotation.annotationid])
+	public Map createCancelAnnotation( cancelannotation ) {
+		def annotation = annotationSvc.openAnnotation( cancelannotation.annotationid )
 		validateAnnotationState( annotation )
 		validateInfo( cancelannotation )
 		cancelannotation.txnno = seqSvc.getNextFormattedSeries('CancelAnnotation')
@@ -88,7 +84,7 @@ class CancelAnnotationService
 
 
 	@ProxyMethod
-	public Map update( cancelannotation ) {
+	public Map updateCancelAnnotation( cancelannotation ) {
 		validateInfo( cancelannotation )
 		em.validate( SCHEMA_NAME, cancelannotation )
 		em.update(SCHEMA_NAME, cancelannotation)
@@ -97,15 +93,15 @@ class CancelAnnotationService
 
 
 	@ProxyMethod
-	public def open(cancelannotation) {
-		cancelannotation = em_cancelannotation.read(cancelannotation)
+	public def openCancelAnnotation( objid) {
+		def cancelannotation = em.sqlContext.createNamedQuery('cancelannotation:open').setParameter('objid', objid).singleResult
 		if( !cancelannotation ) throw new Exception('Cancel Annotation does not exist or has already been deleted.')
 		return cancelannotation 
 	}
 
 
 	@ProxyMethod
-	public def delete( cancelannotation ) {
+	public def deleteCancelAnnotation( cancelannotation ) {
 		txnRef.delete(cancelannotation.objid)
 		workflowRef.deleteAll(cancelannotation.objid)
 		em.delete(SCHEMA_NAME, cancelannotation)	
@@ -114,8 +110,8 @@ class CancelAnnotationService
 
 
 	@ProxyMethod
-	public Map submitForApproval( cancelannotation ) {
-		def annotation = annotationSvc.open([objid: cancelannotation.annotationid])
+	public Map submitCancelAnnotationForApproval( cancelannotation ) {
+		def annotation = annotationSvc.openAnnotation( cancelannotation.annotationid )
 		validateAnnotationState( annotation )
 		cancelannotation.state = STATE_FORAPPROVAL
 		workflowRef.insert(cancelannotation)
@@ -125,15 +121,15 @@ class CancelAnnotationService
 
 
 	@ProxyMethod
-	public Map approve( cancelannotation ) {
-		def annotation = annotationSvc.open([objid: cancelannotation.annotationid])
+	public Map approveCancelAnnotation( cancelannotation ) {
+		def annotation = annotationSvc.openAnnotation( cancelannotation.annotationid )
 		validateAnnotationState( annotation )
 		
 		cancelannotation.state = STATE_APPROVED
 		workflowRef.insert(cancelannotation)
 		em.update(SCHEMA_NAME, cancelannotation )
 
-		annotationSvc.cancel(annotation)
+		annotationSvc.cancelAnnotation(annotation)
 		
 		txnRef.delete( cancelannotation.annotationid )
 		txnRef.delete( cancelannotation.faasid )
@@ -143,7 +139,7 @@ class CancelAnnotationService
 
 
 	@ProxyMethod
-	public def disapprove( cancelannotation ) {
+	public def disapproveCancelAnnotation( cancelannotation ) {
 		workflowRef.delete(cancelannotation)
 		cancelannotation.state = STATE_DRAFT
 		em.update(SCHEMA_NAME, cancelannotation) 
@@ -165,16 +161,5 @@ class CancelAnnotationService
 	void validateAnnotationState(annotation){
 		if (annotation.state == 'CANCELLED') throw new Exception('Annotation has already been cancelled.')
 		if (annotation.state != 'APPROVED') throw new Exception('Annotation is not yet approved.')
-	}
-
-
-
-	@ProxyMethod
-	public void postRemote(cancelannotation) {
-		def exist = em_cancelannotation.find([objid: cancelannotation.objid]).first() != null
-		if (!exist) {
-			em_cancelannotation.create(cancelannotation)
-			annotationSvc.cancel([objid: cancelannotation.annotationid])
-		}
 	}
 }

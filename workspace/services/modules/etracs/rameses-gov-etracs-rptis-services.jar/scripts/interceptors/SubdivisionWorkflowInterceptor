@@ -39,7 +39,7 @@ class SubdivisionWorkflowInterceptor
 	def ledgerSvc 
 
 
-	@After(pattern='SubdivisionService.create')
+	@After(pattern='SubdivisionService.createSubdivision')
 	public void afterCreate(evt){
 		def subdivision = evt.result 
 		def info = evt.args[0] 
@@ -74,7 +74,7 @@ class SubdivisionWorkflowInterceptor
 	public void handleWorkflowOpen( evt ) {
 		def task = evt.result 
 		if ( ! task.refid ) throw new Exception('RefId is required.')
-		task.data = subdivisionSvc.open([objid:task.refid])
+		task.data = subdivisionSvc.openSubdivision(task.refid)
 		task.data.taskid = task.objid 
 		task.data.taskaction = task.state
 		task.data.assignee = task.assignee 
@@ -90,13 +90,7 @@ class SubdivisionWorkflowInterceptor
 	@After(pattern="SubdivisionWorkflowService.signal", eval="#{args[0].action =='delete'}", index=10) 
 	public void deleteSubdivision( evt ) {
 		def subdivision = evt.args[0].data
-		subdivisionSvc.delete(subdivision)
-	}
-
-	@After(pattern="SubdivisionWorkflowService.signal", eval="#{args[0].action =='disapprove'}", index=10) 
-	public void disapproveSubdivision( evt ) {
-		def subdivision = evt.args[0].data
-		subdivisionSvc.delete(subdivision)
+		subdivisionSvc.deleteSubdivision(subdivision)
 	}
 
 	@Before(pattern="SubdivisionWorkflowService.signal", eval="#{args[0].state.equalsIgnoreCase('examiner') && !args[0].action?.matches('return.*')}", index=10) 

@@ -7,10 +7,12 @@ class CancelledFAASServiceInterceptor
 	@Service('LogService')
 	def logSvc 
 
-	@After(pattern="CancelledFAASService.(init|create|update|submitForApproval|disapprove|approve|onlineApprove)") 
+
+	@After(pattern="CancelledFAASService.(createCancelledFaas|initCancelledFaas|updateCancelledFaas|submitForApproval|disapproveFaasCancellation|approveFaasCancellation)") 
 	public void logActions( evt ) {
 		def cancelledfaas = evt.result 
 		logSvc.log( evt.methodName, 'CancelledFAAS', cancelledfaas.objid)
 	}
+
 }
 

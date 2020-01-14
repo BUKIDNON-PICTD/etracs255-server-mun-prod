@@ -18,9 +18,6 @@ class CancelledFAASWorkflowInterceptor
 	@Service('CancelledFAASService')
 	def cancelledSvc
 
-	@Service('DateService')
-	def dtSvc
-
 	@Service('RPTRequirementService')
 	def reqSvc
 
@@ -34,7 +31,7 @@ class CancelledFAASWorkflowInterceptor
     def util
 
 
-	@After(pattern="CancelledFAASService.init") 
+	@After(pattern="CancelledFAASService.initCancelledFaas") 
 	public void initWorkflow( evt ) {
 		def  entity = evt.result 
 		entity.task = workflowSvc.start([refid: entity.objid, data: entity])[0]
@@ -47,14 +44,13 @@ class CancelledFAASWorkflowInterceptor
 	@After(pattern="CancelledFAASWorkflowService.signal", eval="#{args[0].state == 'receiver' && args[0].action == 'delete'}", index=10) 
 	public void deleteRecord( evt ) {
 		def entity = evt.args[0].data
-		cancelledSvc.delete(entity)
+		cancelledSvc.deleteCancelledFaas(entity)
 	}
 
 	@Before(pattern="CancelledFAASWorkflowService.signal", eval="#{args[0].state == 'receiver' && args[0].action != 'delete'}", index=10) 
 	public void validateReceiveInfo( evt ) {
 		def faas = evt.args[0].data
-		util.required('Cancel Reason', faas.reason)
-        util.required('Cancel Reason', faas.reason.code)
+		util.required('Reason', faas.reason)
 		util.required('Last Tax Year', faas.lasttaxyear)
 		util.required('Remarks', faas.remarks)
 
@@ -68,13 +64,6 @@ class CancelledFAASWorkflowInterceptor
 		def findings = examinationSvc.getFindings(faas.objid)
 		if (!findings )
 			throw new Exception('Examination Finding is required.')
-	}
-
-	@After(pattern="CancelledFAASWorkflowService.signal", eval="#{args[0].state == 'approver' && args[0].action == 'approve'}") 
-	public void approve( evt ) {
-		def cancelledfaas = evt.args[0].data
-		cancelledfaas.dtapproved = dtSvc.serverDate
-		cancelledSvc.onlineApprove(cancelledfaas)
 	}
 
 	void buildRequirements(entity){

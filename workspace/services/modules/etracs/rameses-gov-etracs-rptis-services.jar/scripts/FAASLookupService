@@ -16,44 +16,59 @@ class FAASLookupService
 		params.fixfilters = ''
 		params.filters    = ''
 		params.orderby    = ''
+		params.columns    = getColumns()
 
 		if (params.objid){
-			params.fixfilters += ' and objid = $P{objid} '
+			params.fixfilters += ' and f.objid = $P{objid} '
 		}
 		if (params.state){
-			params.fixfilters += ' and state = $P{state} '
+			params.fixfilters += ' and f.state = $P{state} '
 		}
 		if (params.rputype){
-			params.fixfilters += ' and rputype = $P{rputype} '
+			params.fixfilters += ' and r.rputype = $P{rputype} '
 		}
 		if (params.taxpayerid){
-			params.fixfilters += ' and taxpayer_objid = $P{taxpayerid}'
+			params.fixfilters += ' and f.taxpayer_objid = $P{taxpayerid}'
 		}
 
 		if (params.searchtext){
-			params.orderby = ' order by tdno '
+			params.orderby = ' order by f.tdno '
 			params.searchtext 	= (params.searchtext ? params.searchtext : '') + '%';
-
-			//proiritize tdno, prevtdno and pin looklup
-			params.filters = ' and tdno like $P{searchtext}  or prevtdno like $P{searchtext} or pin like $P{searchtext}'
-			def list = em.getLookupFaas(params)
-			if (list) return list
-
-			//search other keys
-			params.filters = '''
-				and (
-					utdno like $P{searchtext} or 
-					cadastrallotno like $P{searchtext} or 
-					blockno like $P{searchtext} or 
-					trackingno like $P{searchtext} or 
-					owner_name like $P{searchtext} or 
-					surveyno like $P{searchtext} or 
-					pin like $P{searchtext}
-				)
-			'''
+			def filters = [
+				' and fl.tdno LIKE $P{searchtext} ',
+				' and fl.pin LIKE $P{searchtext} ',
+				' and fl.owner_name LIKE $P{searchtext} ',
+				' and fl.cadastrallotno LIKE $P{searchtext} ',
+				' and fl.blockno LIKE $P{searchtext} ',
+				' and fl.surveyno LIKE $P{searchtext} ',
+				' and fl.trackingno LIKE $P{searchtext} ',
+			]
+			return utilSvc.getListFromQuery('faas:getLookupFaas', filters, params, 'f.objid');
 		}
-		return em.getLookupFaas(params)
+		else{
+			return em.getLookupFaas(params)
+		}
 	}
+
+	def getColumns(){
+		return '''
+			f.*,
+			e.name as taxpayer_name, 
+			e.address_text as taxpayer_address,
+			pc.code AS classification_code, 
+			pc.code AS classcode, 
+			pc.name AS classification_name, 
+			pc.name AS classname, 
+			r.ry, r.rputype, r.totalmv, r.totalav,
+			r.totalareasqm, r.totalareaha, r.suffix, r.rpumasterid, 
+			rp.barangayid, rp.cadastrallotno, rp.blockno, rp.surveyno, rp.pintype, 
+			rp.section, rp.parcel, rp.stewardshipno,
+			b.name AS barangay_name,
+			t.trackingno
+		'''
+	}
+
+
 
 }
 

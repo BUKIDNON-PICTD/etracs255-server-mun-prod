@@ -13,9 +13,6 @@ public class RPTRequirementRuleService
 	@ActiveDB("rule")
 	def ruleDB;
 
-	@Service('RPTUtil')
-	def util
-
 
 	@Resource("RuleService")
 	def ruleSvc;
@@ -60,28 +57,18 @@ public class RPTRequirementRuleService
 		fact.rputype		= txninfo.rputype
 		fact.classificationid = txninfo.classificationid 
 		facts << fact
-		facts << createRpu(txninfo)
-		if (txninfo.attributes == null) txninfo.attributes = []
-		def titled = txninfo.attributes.find{it.attribute == 'TITLED'}
-		if (!titled) {
-			txninfo.attributes << [attribute: 'UNTITLED']
-		}
+
 		txninfo.attributes.each{ 
-			fact = ruleSvc.createFact(RULESET, FACT_PACKAGE + 'TxnAttributeFact')
-			fact.txntype = txninfo.txntype.objid 
-			fact.attribute = it.attribute 
-			facts << fact 
+			if (it.selected || it.selected == 1){
+				fact = ruleSvc.createFact(RULESET, FACT_PACKAGE + 'TxnAttributeFact')
+				fact.txntype = txninfo.txntype.objid 
+				fact.attribute = it.attribute 
+				facts << fact 
+			}
 		}
 
 		return facts;
 	}
-
-	def createRpu(txninfo) {
-		def rpufact = new rptis.facts.RPU()
-		rpufact.rputype = txninfo.rputype 
-		return rpufact 
-	}
-	
 }
 
 

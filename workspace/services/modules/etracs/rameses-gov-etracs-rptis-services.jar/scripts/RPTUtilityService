@@ -34,7 +34,7 @@ class RPTUtilityService
 	@ProxyMethod
 	public void updatePin( info ) { 
 		rpuSvc.validateSuffix(info.rputype, info.suffix) 
-		rpuSvc.checkDuplicateFullPin([objid:info.rpuid, ry: info.ry, fullpin:info.newpin, rputype: info.rputype])
+		rpuSvc.checkDuplicateFullPin([objid:info.rpuid, ry: info.ry, fullpin:info.newpin])
 		def tokens = info.newpin.tokenize('-')
 		info.ssection = tokens[3]
 		info.sparcel = tokens[4]
@@ -50,7 +50,7 @@ class RPTUtilityService
 	}
 
 	void updateCommonInfo(info){
-		info.rpu = [objid:info.rpuid, fullpin:info.newpin, rputype:info.rputype, suffix: info.suffix]
+		info.rpu = [objid:info.rpuid, fullpin:info.newpin, rputype:info.rputype]
 		if (info.rputype != 'land' || (info.rputype == 'land' && info.claimno != null)){
 			faasSvc.updateFullPinInfo(info)
 			info.newpin = info.fullpin 
@@ -79,7 +79,6 @@ class RPTUtilityService
 		info.barangayid = info.barangay.objid
 		info.barangayname = info.barangay.name 
 		info.landrpuid =landfaas.rpuid 
-		info.rp = landfaas.rp 
 
 
 		if('bldg' == info.rputype)
@@ -106,7 +105,6 @@ class RPTUtilityService
 		rp.barangay = info.barangay
 		rp.barangayid = info.barangay.objid 
 		rp.parcel = info.sparcel 
-		rp.claimno = info.claimno
 		rpSvc.update( rp )
 		info.realpropertyid = rp.objid 
 		info.barangayid = info.barangay.objid

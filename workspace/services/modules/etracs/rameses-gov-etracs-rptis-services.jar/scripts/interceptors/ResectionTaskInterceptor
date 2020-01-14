@@ -10,6 +10,9 @@ class ResectionTaskInterceptor
 	@Service('RPTTaskService')
 	def taskSvc
 
+	@Service('RPTTrackingService')
+    def trackingSvc
+
 	@Env
 	def env 
 
@@ -91,6 +94,7 @@ class ResectionTaskInterceptor
 	@After(pattern="ResectionService.approveResectionAsync") 
 	public void approveSubdivisionAsync( evt ) {
 		taskSvc.closeTask([objid:evt.result.objid])
+		trackingSvc.updateMessage([objid:evt.result.objid, msg:'Resection is already approved.'])
 	}
 
 	@After(pattern="ResectionService.approveResection") 

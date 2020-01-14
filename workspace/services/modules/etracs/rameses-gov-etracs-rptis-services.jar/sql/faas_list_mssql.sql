@@ -133,7 +133,8 @@ update fl set
 	fl.yearissued = f.year,
 	fl.taskid = (select objid from faas_task where refid = f.objid and enddate is null),
 	fl.taskstate = (select state from faas_task where refid = f.objid and enddate is null),
-	fl.assignee_objid = (select assignee_objid from faas_task where refid = f.objid and enddate is null)
+	fl.assignee_objid = (select assignee_objid from faas_task where refid = f.objid and enddate is null),
+	fl.trackingno = (select trackingno from rpttracking where objid = f.objid)
 from faas_list fl
 	inner join faas f on fl.objid = f.objid 
 	inner join rpu r on fl.rpuid = r.objid 

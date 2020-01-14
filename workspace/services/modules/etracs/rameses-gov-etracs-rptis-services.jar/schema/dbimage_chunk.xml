@@ -1,4 +1,4 @@
-<schema adapter="image">
+<schema>
 	<element tablename="image_chunk">
 		<field name="objid" primary="true"/>
 		<field name="parentid"/>

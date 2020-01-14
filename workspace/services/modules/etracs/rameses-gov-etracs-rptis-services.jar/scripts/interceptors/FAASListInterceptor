@@ -34,7 +34,7 @@ class FAASListInterceptor
 	}		
 
 	
-	@Before(pattern="FAASService.(deleteFaas|deleteRevertedFaas)")
+	@Before(pattern="FAASService.deleteFaas")
 	void beforeDeleteFaas(evt){
 		def faas = evt.args[0]
 		em.deleteFaasList(faas)
