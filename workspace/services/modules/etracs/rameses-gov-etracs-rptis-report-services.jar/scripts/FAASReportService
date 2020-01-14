@@ -98,11 +98,10 @@ class FAASReportService
 
 	
 	@ProxyMethod
-	public def getReportData( param ) {
-		def faas = em.findFaasById(param)
-		if( !faas ) {
-			throw new Exception('Cannot open FAAS with ID No. ' + param.objid + '.')
-		}
+	public def getReportData( faas ) {
+		faas = em.findFaasById(faas)
+		if( !faas ) 
+			throw new Exception('Cannot open FAAS with ID No. ' + faas.objid + '.')
 
 		faas.rpu = em.findRpuById(faas.rpu)
 		faas.rp = em.findRealPropertyById(faas.rp)
@@ -170,7 +169,6 @@ class FAASReportService
 		// then the municipal assessor is authorized 
 		// by the provincial assessor to approve the faas record 
 		if (isRecommenderAuthorized(faas)){
-			faas.authorized = true
 			faas.byauthority = 'By Authority of the Provincial Assessor.'
 		}
 

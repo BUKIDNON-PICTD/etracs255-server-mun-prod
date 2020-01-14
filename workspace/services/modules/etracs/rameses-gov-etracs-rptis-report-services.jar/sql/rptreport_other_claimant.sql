@@ -1,6 +1,5 @@
 [getList]
 select 
-	f.objid, 
 	b.pin, 
 	b.name as barangay,
 	f.tdno, 
@@ -29,12 +28,11 @@ and f.state = 'current'
 and r.rputype = 'land' 
 and f.lguid = $P{lguid}
 and rp.barangayid like $P{barangayid}
-order by b.pin, f.owner_name 
+order by b.pin, f.fullpin 
 
 
 [getSummary]
 select 
-	b.pin, 
 	b.name as barangay,
 	count(*) as rpucount,
 	sum(r.totalareaha) as totalareaha, 
@@ -51,5 +49,5 @@ and f.state = 'current'
 and r.rputype = 'land' 
 and f.lguid = $P{lguid}
 and rp.barangayid like $P{barangayid}
-group by b.pin, b.name 
+group by b.name 
 order by b.pin

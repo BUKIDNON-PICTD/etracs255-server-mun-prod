@@ -21,13 +21,11 @@ class RPTReportStatementOfValuationService
 		util.required('Month', params.month)
 
 		params.lguid = params.lgu.objid 
-
-		util.buildStartEndDateFilter(params)
+		params.monthid = params.month.index 
 		
 		def p = [
-			TITLE 		: 'STATEMENT OF VALUATION ',
-			SUBTITLE	: 'For the Month of ' + params.month.caption + ', ' + params.year,
-			FORLGUNAME  : (params.lguid != env.ORGID ? params.lgu.fullname : ''),
+			TITLE 		: 'STATEMENT OF VALUATION ' + params.month.caption + ' ' + params.year ,
+			FORLGUNAME  : (params.lgu ? params.lgu.fullname : (env.ORGCLASS + ' OF ' + env.ORGNAME)),
 		]
 
 		def items = em.getList(params).each{ 

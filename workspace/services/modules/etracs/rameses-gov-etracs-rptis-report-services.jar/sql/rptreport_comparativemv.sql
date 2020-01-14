@@ -19,9 +19,8 @@ FROM faas f
 	INNER JOIN realproperty rp on f.realpropertyid = rp.objid 
 	INNER JOIN propertyclassification pc ON r.classification_objid = pc.objid 
 WHERE r.taxable = 1
-  AND (
-  		(f.dtapproved < $P{startdate} AND f.state = 'CURRENT' ) OR 
-	(f.dtapproved < $P{startdate} and f.canceldate >= $P{startdate} AND f.state = 'CANCELLED' )
+  AND ((f.dtapproved < $P{startdate} and f.state = 'CURRENT') OR
+      (f.dtapproved < $P{startdate} and f.canceldate >= $P{startdate} and f.canceldate < $P{enddate} and f.state = 'CANCELLED')
   )
 ${filter}
 GROUP BY pc.objid, pc.name, pc.special  , pc.orderno  
@@ -43,7 +42,7 @@ FROM faas f
 	INNER JOIN propertyclassification pc ON r.classification_objid = pc.objid 
 WHERE r.taxable = 1
   AND ((f.dtapproved < $P{enddate} and f.state = 'CURRENT') OR
-      (f.canceldate >= $P{startdate} and f.canceldate < $P{enddate})
+      (f.canceldate >= $P{startdate} and f.canceldate < $P{enddate} and f.state = 'CANCELLED')
   )
 ${filter}
 GROUP BY pc.objid, pc.name, pc.special , pc.orderno  

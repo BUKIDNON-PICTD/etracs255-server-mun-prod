@@ -15,7 +15,10 @@ class RPTReportJATService
 	@ProxyMethod
 	public def generateJAT( params )  {
 		util.buildStartEndDateFilter(params)
-		params.barangayid = (params.barangay ? params.barangay.objid : '%')
+		params.barangayid = params.barangay?.objid 
+		if (!params.section) {
+			params.section = '%'
+		}
 
 		def list = em.getJAT(params)
 		if( ! list ) throw new Exception('Records not found.')
@@ -24,15 +27,7 @@ class RPTReportJATService
 				it.owner.name = it.owner.name + '\nAdmin: ' + it.administrator.name 
 			}
 		}
-
-        def p = [
-            SUBTITLE : 'For the Month of ' + params.month.caption + ', ' + params.year 
-        ]		
-
-        return [
-            parameters  : p,
-            reportdata  : list
-        ]
+		return [reportdata:list]
 	}
 
 

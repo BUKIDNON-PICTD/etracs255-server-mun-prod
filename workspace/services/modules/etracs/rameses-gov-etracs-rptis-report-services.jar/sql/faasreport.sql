@@ -38,9 +38,9 @@ SELECT
 	f.prevtdno,
 	f.ryordinanceno,
 	f.ryordinancedate,
-	fl.trackingno 
+	t.trackingno 
 FROM faas f
-	INNER JOIN faas_list fl ON f.objid = fl.objid 
+	LEFT JOIN rpttracking t ON f.objid = t.objid 
 	INNER JOIN faas_txntype ft on f.txntype_objid = ft.objid 
 WHERE f.objid = $P{objid}
 

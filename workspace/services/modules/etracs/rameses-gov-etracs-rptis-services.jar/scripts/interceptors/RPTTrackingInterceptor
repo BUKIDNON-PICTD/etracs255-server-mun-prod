@@ -29,8 +29,8 @@ class RPTTrackingInterceptor
 		svc.assignTrackingNo(subdivision, 'subdivision', 'Document is currently reviewed.')
 	}
 
-	@After(pattern='SubdivisionService.openSubdivision')
-	public void afterOpenSubdivision(evt){
+	@After(pattern='SubdivisionService.open')
+	public void afterOpen(evt){
 		def subdivision = evt.result 
 		def tracking = svc.findById(subdivision.objid)
 		subdivision.trackingno = tracking?.trackingno

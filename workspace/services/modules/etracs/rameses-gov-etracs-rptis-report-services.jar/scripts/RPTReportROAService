@@ -81,6 +81,7 @@ class RPTReportROAService
 
     void buildFilter(params){
         util.buildStartEndDateFilter(params)
+        params.ry = dtsvc? dtsvc.getServerYear() : '';
         params.filter = ''
 
         if ('period'.equalsIgnoreCase(params.periodtype.type)){

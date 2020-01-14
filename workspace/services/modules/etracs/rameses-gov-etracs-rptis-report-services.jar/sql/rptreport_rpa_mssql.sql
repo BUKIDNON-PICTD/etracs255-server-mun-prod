@@ -178,7 +178,6 @@ GROUP BY pc.objid, pc.name, pc.orderno
 ORDER BY pc.orderno  
 
 
-
 [getLiftExempts]
 SELECT 
 	e.objid AS classid,

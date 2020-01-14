@@ -43,10 +43,10 @@ class RPTReportTxnLogService
 		}
 
 		if (params.reftype) {
-			params.filter += ' and reftype = $P{reftype} '
+			params.filter += ' and ref = $P{reftype} '
 		}
 
-		def items = em.getList(params).each{ it.ref = it.ref.toLowerCase()}
+		def items = em.getList(params)
 		if (!items) throw new Exception('Records not found.')	
 
 		def p = [

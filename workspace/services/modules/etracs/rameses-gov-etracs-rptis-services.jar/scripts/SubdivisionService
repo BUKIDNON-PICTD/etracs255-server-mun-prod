@@ -53,21 +53,11 @@ class SubdivisionService
     @Service('BarangayLookupService')
     def brgySvc;
 
-
-    @DataContext('subdivision')
-    def em_subdivision
-
     @DataContext('subdivision_cancelledimprovement')
     def cancelledimprovementDb
 
     @Service('FAASAnnotationService')
     def annotationSvc 
-
-    @DataContext(value='dbimage_header', adapter='image')
-    def em_header
-
-    @DataContext(value='dbimage_chunk', adapter='image')
-    def em_chunk
 
 
     def SCHEMA_SUBDIVISION      = 'subdivision'
@@ -83,7 +73,7 @@ class SubdivisionService
     def TXNTYPE_SD = 'SD'
 
     @ProxyMethod
-    public def create(info) {
+    public def createSubdivision(info) {
         def pdate = dtSvc.parseCurrentDate()
         def subdivision  = [:]
         subdivision.putAll(info)
@@ -93,14 +83,14 @@ class SubdivisionService
         subdivision.txndate = pdate.date 
         subdivision.txntype = faasSvc.getTxnType(TXNTYPE_SD)
         subdivision.ry = util.toInteger(var.current_ry)
+        subdivision.lguid = env.ORGID 
         subdivision.autonumber = util.toBoolean(var.td_autonumber, false)
         subdivision.effectivityyear = pdate.year + 1
         subdivision.effectivityqtr  = 1
         subdivision.receiver = [type:'receiver', name:env.FULLNAME, title:env.JOBTITLE, dtsigned:dtSvc.serverDate]
-        subdivision.lguid = env.ORGID 
         subdivision.originlguid = ( subdivision.originlguid ? subdivision.originlguid : env.ORGID )
-        em_subdivision.create(subdivision)
-        return open(subdivision) 
+        em.create(subdivision)
+        return open(subdivision.objid) 
     }
 
     @ProxyMethod
@@ -110,7 +100,7 @@ class SubdivisionService
         return subdivision
     }
 
-    @ProxyMethod
+   @ProxyMethod
     public def open( entity ) {
         if (entity instanceof java.lang.String){
             entity = [objid:entity]
@@ -132,7 +122,7 @@ class SubdivisionService
         return em.getMotherLands(subdivision)
     }
 
-    @ProxyMethod
+   @ProxyMethod
     public def delete( subdivision ) {
         getAffectedRpus(subdivision.objid).each{arpu ->
             em.delete(arpu, SCHEMA_AFFECTED_RPU)
@@ -153,11 +143,6 @@ class SubdivisionService
         em.deleteTasks(subdivision)
         em.delete(subdivision)
         return subdivision
-    }
-
-    @ProxyMethod
-    public def disapprove( subdivision ) {
-        return delete(subdivision)
     }
 
 
@@ -217,7 +202,7 @@ class SubdivisionService
     @ProxyMethod
     public void undoCancelledImprovement(cancelledimprovement) {
         def arpu = em.findAffectedRpuById(cancelledimprovement)
-        def subdivision = open([objid:cancelledimprovement.parentid])
+        def subdivision = open(cancelledimprovement.parentid)
         createAffectedRpu(subdivision, arpu)
         cancelledimprovementDb.delete([objid:cancelledimprovement.objid])
     }
@@ -226,7 +211,6 @@ class SubdivisionService
     @ProxyMethod
     public def createSubdividedLand( land, subdivision ) {
         util.required('Real Property', land.rp)
-        def oldrpid = land.rp.objid 
         
         def faas = faasSvc.initCapture(buildInitInfo(land))
         land.rp.objid = faas.rp.objid 
@@ -236,7 +220,6 @@ class SubdivisionService
         land.newrpid = faas.rp.objid
         land.newrpuid = faas.rpu.objid
         land.newfaasid = faas.objid 
-        updateSketch(oldrpid, land)
         em.save(land, SCHEMA_SUBDIVIDED_LAND)
         return land 
     }
@@ -366,7 +349,7 @@ class SubdivisionService
     }    
 
     @ProxyMethod
-    public def submitToProvince(subdivision){
+    public def submitToProvinceSubdivision(subdivision){
         subdivision.state = STATE_FORAPPROVAL
         insertFaasSignatories(subdivision)
         em.updateSubdividedLandFaasTxnType(subdivision)
@@ -406,7 +389,7 @@ class SubdivisionService
 
 
     @ProxyMethod
-    public def approve(subdivision){
+    public def approveSubdivision(subdivision){
         checkPendingSubdividedLands(subdivision)
         checkPendingAffectedRpus(subdivision)
         cancelMotherLands(subdivision)
@@ -561,7 +544,6 @@ class SubdivisionService
         faas.titleno         = null
         faas.titledate       = null
         faas.memoranda       = subdivision.memoranda
-        faas.lguid           = (oldfaases ? oldfaases[0].lguid : subdivision.originlguid)
         faas.originlguid     = subdivision.originlguid
     }
 
@@ -774,31 +756,6 @@ class SubdivisionService
             cancelledbytdnos    : cancelledbytdnos,
         ]
         faasSvc.cancelFaas(params)
-    }
-
-
-    void updateSketch(oldrpid, land) {
-        if (land.rp.drawing) {
-            def sketch = [objid: land.newfaasid, drawing: land.rp.drawing]
-            faasSvc.saveSketch(sketch)
-        } else {
-            def header = em_header.find([objid: oldrpid]).first()
-            if (header) {
-                def chunks = em_chunk.find([parentid: header.objid]).list()
-                header.objid = land.newfaasid
-                header.refid = land.newfaasid
-
-                em_header.create(header)
-                chunks.each{
-                    it.objid = 'C' + new java.rmi.server.UID()
-                    it.parentid = header.objid
-                    em_chunk.create(it)
-                }
-
-                em_chunk.find([parentid: oldrpid]).delete()
-                em_header.find([objid: oldrpid]).delete()
-            }
-        }
     }
 }
 
