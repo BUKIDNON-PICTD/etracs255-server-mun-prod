@@ -349,7 +349,7 @@ class SubdivisionService
     }    
 
     @ProxyMethod
-    public def submitToProvinceSubdivision(subdivision){
+    public def submitToProvince(subdivision){
         subdivision.state = STATE_FORAPPROVAL
         insertFaasSignatories(subdivision)
         em.updateSubdividedLandFaasTxnType(subdivision)
