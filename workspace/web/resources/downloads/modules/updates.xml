@@ -1,6 +1,6 @@
 <app>
 <env>
-app.title=ETRACS v2.5 PGB-255.013 RPT-03021 formallguname
+app.title=ETRACS v2.5 PGB-255.014 RPT-03021 formallguname
 app.host=localhost:8070
 app.cluster=osiris3
 app.context=etracs25

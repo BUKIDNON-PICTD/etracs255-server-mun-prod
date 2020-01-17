@@ -73,7 +73,7 @@ class SubdivisionService
     def TXNTYPE_SD = 'SD'
 
     @ProxyMethod
-    public def createSubdivision(info) {
+    public def create(info) {
         def pdate = dtSvc.parseCurrentDate()
         def subdivision  = [:]
         subdivision.putAll(info)

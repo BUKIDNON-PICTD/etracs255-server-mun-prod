@@ -23,7 +23,7 @@ class RPTTrackingInterceptor
 	}
 
 
-	@After(pattern='SubdivisionService.createSubdivision')
+	@After(pattern='SubdivisionService.create')
 	public void afterCreateSubdivision(evt){
 		def subdivision = evt.result 
 		svc.assignTrackingNo(subdivision, 'subdivision', 'Document is currently reviewed.')

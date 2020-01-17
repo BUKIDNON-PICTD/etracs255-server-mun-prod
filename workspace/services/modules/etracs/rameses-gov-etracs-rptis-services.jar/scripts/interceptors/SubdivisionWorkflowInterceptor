@@ -39,7 +39,7 @@ class SubdivisionWorkflowInterceptor
 	def ledgerSvc 
 
 
-	@After(pattern='SubdivisionService.createSubdivision')
+	@After(pattern='SubdivisionService.create')
 	public void afterCreate(evt){
 		def subdivision = evt.result 
 		def info = evt.args[0] 
