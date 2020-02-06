@@ -47,7 +47,7 @@ class ConsolidationSupportService
     @ProxyMethod
     public def buildConsolidationData(consolidation){
         def data = [:]
-        data.putAll(svc.openConsolidation(consolidation.objid))
+        data.putAll(svc.open(consolidation.objid))
 
         data.consolidatedlands = svc.getConsolidatedLands(consolidation.objid)
         data.affectedrpus = svc.getAffectedRpus(consolidation.objid)

@@ -37,13 +37,13 @@ class RPTTrackingInterceptor
 	}
 
 
-	@After(pattern='ConsolidationService.createConsolidation')
+	@After(pattern='ConsolidationService.create')
 	public void afterCreateConsolidation(evt){
 		def consolidation = evt.result 
 		svc.assignTrackingNo(consolidation, 'consolidation', 'Document is currently reviewed.')
 	}
 
-	@After(pattern='ConsolidationService.openConsolidation')
+	@After(pattern='ConsolidationService.open')
 	public void afterOpenConsolidation(evt){
 		def consolidation = evt.result 
 		def tracking = svc.findById(consolidation.objid)

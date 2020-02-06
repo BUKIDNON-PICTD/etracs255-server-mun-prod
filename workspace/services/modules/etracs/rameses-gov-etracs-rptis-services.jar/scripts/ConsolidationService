@@ -92,7 +92,8 @@ class ConsolidationService
    	*
    	-----------------------------------------------------------------*/
    	@ProxyMethod
-    public Map initConsolidation() {
+    //public Map initConsolidation() {
+    public Map init() {
         def ry =  util.toInteger2(var.current_ry, dtSvc.serverYear)
         return  [
             objid           : util.generateId('CS'),
@@ -113,7 +114,7 @@ class ConsolidationService
 
 
     @ProxyMethod
-    public def createConsolidation( consolidation ) {
+    public def create( consolidation ) {
         def pdate = dtSvc.parseCurrentDate()
         if (!consolidation.txnno)
             consolidation.txnno = util.getNextSequence('CONSOLIDATION')
@@ -136,8 +137,13 @@ class ConsolidationService
 
 
     @ProxyMethod
-    public def openConsolidation( objid ) {
-        def consolidation = em.findById([objid:objid])
+    //public def open( objid ) {
+    public def open( entity ) {
+        if (entity instanceof java.lang.String){
+            entity = [objid:entity]
+        }
+        //def consolidation = em.findById([objid:objid])
+        def consolidation = em.findById(entity)
         if (! consolidation) throw new Exception('Consolidation does not exist or has already been deleted.')
         consolidation.txntype = faasSvc.getTxnType(TXNTYPE_CS)
         consolidation.autonumber = util.toBoolean(var.td_autonumber, false)
@@ -223,7 +229,7 @@ class ConsolidationService
         em.save(consolidatedland, SCHEMA_CONSOLIDATED_LAND) 
         txnRef.insertRef(consolidatedland.landfaasid, consolidatedland.consolidationid, 'FAAS is currently referenced by Consolidation No. ' + consolidatedland.txnno + '.')
         createAffectedRpusByConsolidatedLand(consolidatedland)
-        updateConsolidatedFaasPreviousInfo(openConsolidation(consolidatedland.consolidationid))
+        updateConsolidatedFaasPreviousInfo(open(consolidatedland.consolidationid))
         return consolidatedland
     }    
 
@@ -244,7 +250,7 @@ class ConsolidationService
         }
         txnRef.deleteByObjid(consolidatedland.consolidationid, consolidatedland.landfaasid)
         em.delete(consolidatedland, SCHEMA_CONSOLIDATED_LAND)
-        updateConsolidatedFaasPreviousInfo(openConsolidation(consolidatedland.consolidationid))
+        updateConsolidatedFaasPreviousInfo(open(consolidatedland.consolidationid))
     }    
 
     @ProxyMethod
@@ -316,7 +322,7 @@ class ConsolidationService
     ============================================================================*/    
 
     @ProxyMethod
-    public def initApproveConsolidation(consolidation) {
+    public def initApprove(consolidation) {
         em.deleteConsolidatedPreviousFaas(consolidation)
         em.insertConsolidatedPreviousFaas(consolidation)
     }
@@ -347,7 +353,7 @@ class ConsolidationService
 
     @ProxyMethod
     public def approveConsolidatedLandFaas(consolidation){
-        consolidation.putAll(openConsolidation(consolidation.objid))
+        consolidation.putAll(open(consolidation.objid))
         def faas = faasSvc.openFaas([objid:consolidation.newfaasid])
         if ( faas.state == STATE_PENDING || faas.state == STATE_INTERIM){
             faasSvc.approveFaas(faas)
@@ -367,7 +373,7 @@ class ConsolidationService
     public def approveConsolidation(consolidation){
         checkPendingAffectedRpus(consolidation)
 
-        consolidation.putAll(openConsolidation(consolidation.objid))
+        consolidation.putAll(open(consolidation.objid))
         if (consolidation.state != 'APPROVED'){
             getConsolidatedLands(consolidation.objid).each{cl ->
                 em.cancelRealProperty([objid:cl.rpu.realpropertyid])
@@ -379,7 +385,7 @@ class ConsolidationService
     }    
 
     @ProxyMethod
-    public def submitToProvinceConsolidation(consolidation){
+    public def submitToProvince(consolidation){
         consolidation.state = 'FORAPPROVAL';
         insertFaasSignatories(consolidation)
         updateConsolidation(consolidation)
@@ -464,7 +470,7 @@ class ConsolidationService
                             ])
 
         checkAffectedRpus(affectedrpus)
-        def consolidation = openConsolidation(consolidatedland.consolidationid)
+        def consolidation = open(consolidatedland.consolidationid)
         affectedrpus.each{arpu -> 
             doCreateAffectedRpu(consolidation, arpu)
         }
