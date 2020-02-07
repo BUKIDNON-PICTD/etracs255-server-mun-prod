@@ -35,7 +35,8 @@ class MunicipalitySubdivisionRemoteCallHandler
 		if (state == null || state != 'APPROVED'){
 			state = 'FORAPPROVAL'
 			subdivision.state = state
-			supportSvc2.postSubdivisionData(subdivision)
+			//supportSvc2.postSubdivisionData(subdivision)
+			supportSvc.postSubdivisionData(subdivision)
 			subdivision.tasks = em_subdivision_task.where('refid = :objid and enddate is not null', subdivision).list()
 			doApproveSubdivision(subdivision)
 			println 'Subdivision ' + subdivision.txnno + ' created from Province has been successfully posted and approved.'
