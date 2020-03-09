@@ -80,7 +80,6 @@ from
 order by x.idx
 
 
-
 [getTaxmappings]
 SELECT 
 	b.name as barangay, 
