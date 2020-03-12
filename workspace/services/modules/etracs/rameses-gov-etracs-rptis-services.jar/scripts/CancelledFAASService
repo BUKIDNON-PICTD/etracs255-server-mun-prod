@@ -132,7 +132,7 @@ class CancelledFAASService
 
 
     @ProxyMethod
-    public def approveFaasCancellation( entity ) {
+    public def approve( entity ) {
         entity.state = STATE_APPROVED
         update(entity) 
         cancelFaas(entity)
