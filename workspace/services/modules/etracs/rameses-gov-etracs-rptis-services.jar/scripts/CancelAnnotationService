@@ -54,7 +54,7 @@ class CancelAnnotationService
 
 
 	@ProxyMethod
-	public def initCancelAnnotation( annotationid ) {
+	public def init( annotationid ) {
 		def annotation = annotationSvc.openAnnotation(annotationid)
 		validateAnnotationState(annotation)
 		txnRef.checkReference(annotation.objid)
@@ -69,7 +69,7 @@ class CancelAnnotationService
 	
 
 	@ProxyMethod
-	public Map createCancelAnnotation( cancelannotation ) {
+	public Map create( cancelannotation ) {
 		def annotation = annotationSvc.openAnnotation( cancelannotation.annotationid )
 		validateAnnotationState( annotation )
 		validateInfo( cancelannotation )
@@ -84,7 +84,7 @@ class CancelAnnotationService
 
 
 	@ProxyMethod
-	public Map updateCancelAnnotation( cancelannotation ) {
+	public Map update( cancelannotation ) {
 		validateInfo( cancelannotation )
 		em.validate( SCHEMA_NAME, cancelannotation )
 		em.update(SCHEMA_NAME, cancelannotation)
@@ -93,7 +93,7 @@ class CancelAnnotationService
 
 
 	@ProxyMethod
-	public def openCancelAnnotation( objid) {
+	public def open( objid) {
 		def cancelannotation = em.sqlContext.createNamedQuery('cancelannotation:open').setParameter('objid', objid).singleResult
 		if( !cancelannotation ) throw new Exception('Cancel Annotation does not exist or has already been deleted.')
 		return cancelannotation 
@@ -101,7 +101,7 @@ class CancelAnnotationService
 
 
 	@ProxyMethod
-	public def deleteCancelAnnotation( cancelannotation ) {
+	public def delete( cancelannotation ) {
 		txnRef.delete(cancelannotation.objid)
 		workflowRef.deleteAll(cancelannotation.objid)
 		em.delete(SCHEMA_NAME, cancelannotation)	
@@ -121,7 +121,7 @@ class CancelAnnotationService
 
 
 	@ProxyMethod
-	public Map approveCancelAnnotation( cancelannotation ) {
+	public Map approve( cancelannotation ) {
 		def annotation = annotationSvc.openAnnotation( cancelannotation.annotationid )
 		validateAnnotationState( annotation )
 		
@@ -139,7 +139,7 @@ class CancelAnnotationService
 
 
 	@ProxyMethod
-	public def disapproveCancelAnnotation( cancelannotation ) {
+	public def disapprove( cancelannotation ) {
 		workflowRef.delete(cancelannotation)
 		cancelannotation.state = STATE_DRAFT
 		em.update(SCHEMA_NAME, cancelannotation) 
