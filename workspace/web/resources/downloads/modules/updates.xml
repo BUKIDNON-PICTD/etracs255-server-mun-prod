@@ -1,6 +1,6 @@
 <app>
 <env>
-app.title=ETRACS v2.5 PGB-255.021 RPT-03021 formallguname
+app.title=ETRACS v2.5 PGB-255.022 RPT-03021 formallguname
 app.host=localhost:8070
 app.cluster=osiris3
 app.context=etracs25
@@ -86,7 +86,7 @@ report.custom=buk
 	<module file="plugins/rameses-queueing.jar" version="2.55"/>
 	<module file="customcommon/rameses-gov-treasury-municipality.jar" version="2.56"/>
 	<module file="customcommon/gov-lgu-bukidnon-rpt-muni.jar" version="2.57"/>
-	<module file="customcommon/tagabukid-tc-custom-muni.jar" version="2.58"/>
+	<module file="customcommon/tagabukid-tc-custom-muni.jar" version="2.59"/>
 	<module file="customcommon/tagabukid-paymentorder-plugin.jar" version="1.0"/>
 	<!-- custom modules -->
 
