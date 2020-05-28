@@ -143,7 +143,7 @@ fi
 #fi
 
 # Setup JBoss sepecific properties
-JAVA_OPTS="-Xmx2048m -Dosiris.run.dir=$JBOSS_HOME/bin -Dosiris.base.dir=$JBOSS_HOME"
+JAVA_OPTS="-Xmx2G -Dosiris.run.dir=$JBOSS_HOME/bin -Dosiris.base.dir=$JBOSS_HOME"
 
 # Setup the java endorsed dirs
 #JBOSS_ENDORSED_DIRS="$JBOSS_HOME/lib/endorsed"
