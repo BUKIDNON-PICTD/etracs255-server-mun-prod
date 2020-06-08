@@ -36,7 +36,7 @@ class CancelledFAASSupportService
 
 	@ProxyMethod
 	public def getCancelledFaasData(cancelledfaas){
-		cancelledfaas.putAll(svc.openCancelledFaas(cancelledfaas))
+		cancelledfaas.putAll(svc.open(cancelledfaas))
 		cancelledfaas.examinationfindings = examinationSvc.getFindings( cancelledfaas.objid ).each{
 			it = examinationSvc.open(it)
 		}
