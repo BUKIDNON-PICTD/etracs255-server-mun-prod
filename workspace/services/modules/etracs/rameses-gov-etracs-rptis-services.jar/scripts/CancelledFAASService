@@ -96,7 +96,7 @@ class CancelledFAASService
 
 
     @ProxyMethod
-    public def delete( entity ) {
+    public def deleteCancelledFaas( entity ) {
         txnRef.delete(entity.objid)
         em.deleteSignatories(entity)
         em.deleteRequirements(entity)
