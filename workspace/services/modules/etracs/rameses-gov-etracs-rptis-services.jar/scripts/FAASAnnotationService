@@ -77,7 +77,7 @@ class FAASAnnotationService
 	
 
 	@ProxyMethod
-	public def initAnnotation( faas ) {
+	public def init( faas ) {
 		txnRef.checkReference(faas.objid)
 		if (faas.state == 'CANCELLED') throw new Exception('FAAS has already been cancelled.')
 		if (faas.state != 'CURRENT') throw new Exception('FAAS is not yet approved. Only current record is allowed.')
