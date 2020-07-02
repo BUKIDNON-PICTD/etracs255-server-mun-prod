@@ -112,7 +112,7 @@ class FAASAnnotationService
 
 
 	@ProxyMethod
-	public def openAnnotation( objid ) {
+	public def open( objid ) {
 		def annotation = em.findById([objid:objid])
 		if( !annotation ) throw new Exception('Record does not exist or has already been deleted.')
 		return annotation 
