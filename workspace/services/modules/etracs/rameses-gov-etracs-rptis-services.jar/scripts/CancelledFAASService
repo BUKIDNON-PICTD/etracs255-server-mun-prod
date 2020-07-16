@@ -130,8 +130,27 @@ class CancelledFAASService
         return entity 
     }
 
+// Added same method disapprove() for the client side modules
+     @ProxyMethod
+    public def disapprove( entity ) {
+        entity.state = STATE_DRAFT
+        update(entity)
+        return entity 
+    }
+
 
     @ProxyMethod
+    public def approveFaasCancellation( entity ) {
+        entity.state = STATE_APPROVED
+        update(entity) 
+        cancelFaas(entity)
+        postLedgerCancellation(entity)
+        txnRef.delete(entity.objid)
+        return entity 
+    }
+
+    // Added same method approve() for the client side modules
+     @ProxyMethod
     public def approve( entity ) {
         entity.state = STATE_APPROVED
         update(entity) 
