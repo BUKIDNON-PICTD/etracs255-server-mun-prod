@@ -102,6 +102,18 @@ class FAASAnnotationService
 		return annotation 
 	}
 
+	// copied method createAnnotation to create() for Client side Reference
+	public Map create( annotation ) {
+		validateInfo( annotation )
+		annotation.state  = STATE_DRAFT
+		annotation.txnno  = getNextSeries()
+		annotation.txndate  = dateSvc.serverDate
+		em.create(annotation)
+		//allow multiple annotations 
+		//txnrefSvc.insert(annotation.faasid,  annotation.objid, 'Annotation', 'FAAS is referenced by Annotation No. ' + annotation.docno + '.' )
+		return annotation 
+	}
+
 
 	@ProxyMethod
 	public Map updateAnnotation( annotation ) {
