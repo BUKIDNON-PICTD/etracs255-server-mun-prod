@@ -129,6 +129,13 @@ class FAASAnnotationService
 		if( !annotation ) throw new Exception('Record does not exist or has already been deleted.')
 		return annotation 
 	}
+	// Copiend open() to OpenAnnotation
+	@ProxyMethod
+	public def OpenAnnotation( objid ) {
+		def annotation = em.findById([objid:objid])
+		if( !annotation ) throw new Exception('Record does not exist or has already been deleted.')
+		return annotation 
+	}
 
 	@ProxyMethod
 	public void saveImages(annotation) {
