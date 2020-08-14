@@ -116,6 +116,7 @@ class FAASAnnotationService
 
 	@ProxyMethod
 	public def open( annotation ) {
+		println annotation
 		annotation = em_annotation.read(annotation)
 		if( !annotation ) throw new Exception('Record does not exist or has already been deleted.')
 		return annotation 
@@ -124,7 +125,9 @@ class FAASAnnotationService
 	//copied open() to openAnnotation
 	@ProxyMethod
 	public def openAnnotation( annotation ) {
+		// println annotation
 		annotation = em_annotation.read(annotation)
+		
 		if( !annotation ) throw new Exception('Record does not exist or has already been deleted.')
 		return annotation 
 	}

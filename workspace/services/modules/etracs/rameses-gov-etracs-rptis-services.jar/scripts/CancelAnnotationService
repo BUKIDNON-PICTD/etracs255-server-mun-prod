@@ -70,7 +70,7 @@ class CancelAnnotationService
 
 	@ProxyMethod
 	public Map create( cancelannotation ) {
-		def annotation = annotationSvc.openAnnotation( cancelannotation.annotationid )
+		def annotation = annotationSvc.openAnnotation([objid: cancelannotation.annotationid] )
 		validateAnnotationState( annotation )
 		validateInfo( cancelannotation )
 		cancelannotation.txnno = seqSvc.getNextFormattedSeries('CancelAnnotation')
@@ -98,6 +98,7 @@ class CancelAnnotationService
 		if( !cancelannotation ) throw new Exception('Cancel Annotation does not exist or has already been deleted.')
 		return cancelannotation 
 	}
+	
 
 
 	@ProxyMethod
@@ -109,9 +110,27 @@ class CancelAnnotationService
 
 
 
+	// @ProxyMethod
+	// public Map submitCancelAnnotationForApproval( cancelannotation ) {
+	// 	def annotation = annotationSvc.openAnnotation( cancelannotation)
+	// 	validateAnnotationState( annotation )
+	// 	cancelannotation.state = STATE_FORAPPROVAL
+	// 	workflowRef.insert(cancelannotation)
+	// 	em.update(SCHEMA_NAME, cancelannotation )
+	// 	return cancelannotation
+	// }
+		@ProxyMethod
+	public Map submitForApproval( cancelannotation ) {
+		def annotation = annotationSvc.openAnnotation([objid: cancelannotation.annotationid])
+		validateAnnotationState( annotation )
+		cancelannotation.state = STATE_FORAPPROVAL
+		workflowRef.insert(cancelannotation)
+		em.update(SCHEMA_NAME, cancelannotation )
+		return cancelannotation
+	}
 	@ProxyMethod
 	public Map submitCancelAnnotationForApproval( cancelannotation ) {
-		def annotation = annotationSvc.openAnnotation( cancelannotation.annotationid )
+		def annotation = annotationSvc.openAnnotation([objid: cancelannotation.annotationid])
 		validateAnnotationState( annotation )
 		cancelannotation.state = STATE_FORAPPROVAL
 		workflowRef.insert(cancelannotation)
@@ -119,17 +138,27 @@ class CancelAnnotationService
 		return cancelannotation
 	}
 
+	// @ProxyMethod
+	// public Map submitCancelAnnotationForApproval( cancelannotation ) {
+	// 	def annotation = annotationSvc.openAnnotation( cancelannotation.annotationid )
+	// 	validateAnnotationState( annotation )
+	// 	cancelannotation.state = STATE_FORAPPROVAL
+	// 	workflowRef.insert(cancelannotation)
+	// 	em.update(SCHEMA_NAME, cancelannotation )
+	// 	return cancelannotation
+	// }
+
 
 	@ProxyMethod
 	public Map approve( cancelannotation ) {
-		def annotation = annotationSvc.openAnnotation( cancelannotation.annotationid )
+		def annotation = annotationSvc.openAnnotation([objid: cancelannotation.annotationid] )
 		validateAnnotationState( annotation )
 		
 		cancelannotation.state = STATE_APPROVED
 		workflowRef.insert(cancelannotation)
 		em.update(SCHEMA_NAME, cancelannotation )
 
-		annotationSvc.cancelAnnotation(annotation)
+		annotationSvc.cancel(annotation)
 		
 		txnRef.delete( cancelannotation.annotationid )
 		txnRef.delete( cancelannotation.faasid )
