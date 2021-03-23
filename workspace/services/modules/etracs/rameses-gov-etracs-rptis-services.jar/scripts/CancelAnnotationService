@@ -25,8 +25,8 @@ class CancelAnnotationService
 	@Service('RPTUtil')
 	def util
 
-
-
+	@DataContext('cancelannotation')
+	def em_cancelannotation
 	@Service('FAASAnnotationService')
 	def annotationSvc 
 	
@@ -92,9 +92,15 @@ class CancelAnnotationService
 	}
 
 
+	// @ProxyMethod
+	// public def open( objid) {
+	// 	def cancelannotation = em.sqlContext.createNamedQuery('cancelannotation:open').setParameter('objid', objid).singleResult
+	// 	if( !cancelannotation ) throw new Exception('Cancel Annotation does not exist or has already been deleted.')
+	// 	return cancelannotation 
+	// }
 	@ProxyMethod
-	public def open( objid) {
-		def cancelannotation = em.sqlContext.createNamedQuery('cancelannotation:open').setParameter('objid', objid).singleResult
+	public def open(cancelannotation) {
+		cancelannotation = em_cancelannotation.read(cancelannotation)
 		if( !cancelannotation ) throw new Exception('Cancel Annotation does not exist or has already been deleted.')
 		return cancelannotation 
 	}
