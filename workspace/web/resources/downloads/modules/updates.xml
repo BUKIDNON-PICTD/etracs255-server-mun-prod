@@ -88,7 +88,6 @@ report.custom=buk
 	<module file="customcommon/gov-lgu-bukidnon-rpt-muni.jar" version="2.57"/>
 	<module file="customcommon/tagabukid-tc-custom-muni.jar" version="2.59"/>
 	<module file="customcommon/tagabukid-paymentorder-plugin.jar" version="1.0"/>
-	<module file="customcommon/modifyTDPrevWidthLength.jar" version="1.0"/>
 
 	<!-- custom modules -->
 
